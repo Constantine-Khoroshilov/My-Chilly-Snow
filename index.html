@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+
+	<title>Chilly Snow</title>
+	<meta name="author" content="Constantine-Khoroshilov">
+
+	<style>
+		* { 
+			margin: 0; 
+			padding: 0; 
+		}
+		body {
+			background: #f7f7f7;
+		}
+		canvas {
+			background: #fff; 
+			display: block; 
+			margin: auto 
+		}
+	</style>
+
+	<script src="https://unpkg.com/elm-canvas@2.2.4/elm-canvas.js"></script>
+	<script src="game.js"></script>
+
+</head>
+<body>
+
+	<main id="gamebox"></main>
+
+	<script>
+
+		const d = document;
+
+		// Screen size
+		width = d.documentElement.clientWidth;
+		height = d.documentElement.clientHeight;
+		
+		// Start game
+		let game = Elm.Main.init({
+			node: d.getElementById('gamebox'),
+			flags: [ width, height ]
+		});
+
+	</script>
+	
+</body>
+</html>
