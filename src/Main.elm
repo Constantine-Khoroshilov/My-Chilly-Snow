@@ -9,10 +9,12 @@ import Html.Events exposing (on)
 
 import Json.Decode as Decode
 
-import Canvas exposing (shapes, circle)
+import Canvas exposing (Point, shapes)
 import Canvas.Settings exposing (fill, stroke)
 --import Canvas.Settings.Advanced exposing (..)
 import Color
+
+import Debug exposing (..)
 
 
 
@@ -26,6 +28,7 @@ type alias Model =
   , levelState : LevelState
   -- current game level
   , level : Int
+  , ball : Ball
   }
 
 
@@ -56,19 +59,45 @@ type LevelState
   | Over Bool
 
 
+type alias Ball =
+  { pos : Point
+  , radius : Float
+  -- The speed vec
+  , ux : Float
+  -- The acceleration vec 
+  , ax : Float
+  }
+
+
 
 
 -- The func init gets screen width and height from JS 
 
 init : (Int, Int) -> (Model, Cmd Msg)
-init (width, height) =
-  ( { canvSize = toCanvSize (width, height)
-    , clickState = NotHold
-    , levelState = Init
-    , level = 0
-    }
-  , Cmd.none
-  )
+init (screenWidth, screenHeight) =
+  let
+    (canvWidth, canvHeight) = toCanvSize (screenWidth, screenHeight)
+  in
+    ( { canvSize = 
+          ( canvWidth
+          , canvHeight
+          )
+      , clickState = NotHold
+      , levelState = Init
+      , level = 0
+      , ball = 
+          { pos = 
+              ( toFloat canvWidth |> (*) 0.5
+              , toFloat canvHeight |> (*) 0.3
+              )
+          , radius = toFloat canvWidth |> (*) 0.015
+          , ux = 5
+          , ax = 0 
+          }
+      }
+
+    , Cmd.none
+    )
 
 
 toCanvSize (screenWidth, screenHeight) =
@@ -98,7 +127,7 @@ update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
     Frame _ ->
-      ( model
+      ( onFrame model
       , Cmd.none
       )
 
@@ -106,14 +135,54 @@ update msg model =
       ( { model 
           | clickState = Hold
           , levelState = Play
+          , ball = 
+              (\ball -> 
+                  { ball 
+                    | ux = -ball.ux
+                    , ax = 
+                        if ball.ux > 0 then -0.2
+                        else 0.2
+                  }
+              )
+              (model.ball)
         }
       , Cmd.none
       )
 
     ClickUp ->
-      ( { model | clickState = NotHold }
+      ( { model 
+          | clickState = NotHold
+          , ball = 
+              (\ball -> 
+                  { ball 
+                    | ax = 0
+                    , ux =
+                        if ball.ux > 0 then 7
+                        else -7
+                  }
+              )
+              (model.ball) 
+        }
       , Cmd.none
       )
+
+
+onFrame : Model -> Model
+onFrame model =
+  { model 
+    | ball =
+        (\ball -> 
+            { ball 
+              | pos = move ball.pos ball.ux 0
+              , ux = ball.ux + ball.ax 
+            }
+        )(model.ball)
+  }
+
+
+move : Point -> Float -> Float -> Point
+move (x, y) dx dy =
+  (x + dx, y + dy)
 
 
 
@@ -153,12 +222,8 @@ view model =
           , on "mousedown" (Decode.succeed ClickDown)
           , on "mouseup" (Decode.succeed ClickUp)   
           ]
-          [ shapes 
-              [ case model.clickState of
-                  Hold -> fill Color.red
-                  NotHold -> fill Color.green 
-              ] 
-              [ circle (150, 150) 80 ]
+          [ clear model.canvSize
+          , drawBall model.ball Color.orange
           ]
   
       else
@@ -184,6 +249,22 @@ checkCanvSize (canvWidth, canvHeight) =
       False
     else
       True
+
+
+clear : (Int, Int) -> Canvas.Renderable
+clear (canvWidth, canvHeight) =
+  let
+    width = toFloat canvWidth
+    height = toFloat canvHeight
+  in
+    Canvas.clear (0, 0) width height
+
+
+drawBall : Ball -> Color.Color -> Canvas.Renderable
+drawBall ball color =
+  shapes 
+    [ fill color ] 
+    [ Canvas.circle ball.pos ball.radius ]
 
 
 
