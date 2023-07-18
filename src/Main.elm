@@ -23,6 +23,9 @@ import Color
 type alias Model =
   { canvSize : (Int, Int)
   , clickState : ClickState
+  , levelState : LevelState
+  -- current game level
+  , level : Int
   }
 
 
@@ -42,6 +45,16 @@ type ClickState
   = Hold | NotHold
 
 
+type LevelState
+  -- Init of the game level (before playing) 
+  = Init
+  | Pause
+  | Play
+  -- Game level over. 
+  -- True/False is successful/unsuccessful passed level  
+  | Over Bool
+
+
 
 
 -- The func init gets screen width and height from JS 
@@ -50,6 +63,8 @@ init : (Int, Int) -> (Model, Cmd Msg)
 init (width, height) =
   ( { canvSize = toCanvSize (width, height)
     , clickState = NotHold
+    , levelState = Init
+    , level = 0
     }
   , Cmd.none
   )
@@ -85,7 +100,10 @@ update msg model =
       (model, Cmd.none)
 
     ClickDown ->
-      ( { model | clickState = Hold }
+      ( { model 
+          | clickState = Hold
+          , levelState = Play
+        }
       , Cmd.none
       )
 
@@ -102,10 +120,9 @@ update msg model =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-  Sub.batch
-    [ onAnimationFrameDelta Frame
-    ]
-
+  case model.levelState of
+    Play -> onAnimationFrameDelta Frame
+  
 
 
 
