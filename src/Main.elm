@@ -51,7 +51,8 @@ type LevelState
   | Pause
   | Play
   -- Game level over. 
-  -- True/False is successful/unsuccessful passed level  
+  -- True/False is successful/unsuccessful passed level
+  -- If is true then new level will be loaded  
   | Over Bool
 
 
@@ -97,7 +98,9 @@ update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
     Frame _ ->
-      (model, Cmd.none)
+      ( model
+      , Cmd.none
+      )
 
     ClickDown ->
       ( { model 
@@ -121,7 +124,17 @@ update msg model =
 subscriptions : Model -> Sub Msg
 subscriptions model =
   case model.levelState of
-    Play -> onAnimationFrameDelta Frame
+    Init -> 
+      Sub.none
+
+    Pause -> 
+      Sub.none
+
+    Play -> 
+      onAnimationFrameDelta Frame
+
+    Over _ -> 
+      Sub.none 
   
 
 
