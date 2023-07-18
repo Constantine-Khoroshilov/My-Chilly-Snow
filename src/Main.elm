@@ -68,6 +68,9 @@ type alias Ball =
   , ax : Float
   }
 
+ballSpeed = 5 -- without acceleration
+ballAcceleration = 0.2
+
 
 
 
@@ -91,7 +94,7 @@ init (screenWidth, screenHeight) =
               , toFloat canvHeight |> (*) 0.3
               )
           , radius = toFloat canvWidth |> (*) 0.015
-          , ux = 5
+          , ux = ballSpeed
           , ax = 0 
           }
       }
@@ -127,24 +130,22 @@ update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
     Frame _ ->
-      ( onFrame model
-      , Cmd.none
-      )
+      (onFrame model, Cmd.none)
 
     ClickDown ->
       ( { model 
           | clickState = Hold
           , levelState = Play
-          , ball = 
-              (\ball -> 
-                  { ball 
-                    | ux = -ball.ux
-                    , ax = 
-                        if ball.ux > 0 then -0.2
-                        else 0.2
-                  }
-              )
-              (model.ball)
+          , ball =
+              model.ball
+                |> \ball -> 
+                      { ball 
+                        | ux = -ball.ux
+                        , ax =
+                            -- Set the ball acceleration
+                            if ball.ux > 0 then -ballAcceleration
+                            else ballAcceleration
+                      }
         }
       , Cmd.none
       )
@@ -153,15 +154,15 @@ update msg model =
       ( { model 
           | clickState = NotHold
           , ball = 
-              (\ball -> 
-                  { ball 
-                    | ax = 0
-                    , ux =
-                        if ball.ux > 0 then 7
-                        else -7
-                  }
-              )
-              (model.ball) 
+              model.ball
+                |> \ball -> 
+                      { ball 
+                        | ax = 0
+                        , ux =
+                            -- Reset the ball speed
+                            if ball.ux > 0 then ballSpeed
+                            else -ballSpeed
+                      } 
         }
       , Cmd.none
       )
@@ -171,12 +172,13 @@ onFrame : Model -> Model
 onFrame model =
   { model 
     | ball =
-        (\ball -> 
-            { ball 
-              | pos = move ball.pos ball.ux 0
-              , ux = ball.ux + ball.ax 
-            }
-        )(model.ball)
+        model.ball
+          |> \ball -> 
+                { ball 
+                  | pos = move ball.pos ball.ux 0
+                  -- Increase speed by acceleration
+                  , ux = ball.ux + ball.ax 
+                }
   }
 
 
