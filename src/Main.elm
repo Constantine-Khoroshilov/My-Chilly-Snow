@@ -1,9 +1,14 @@
 module Main exposing (main)
 
 import Browser
-import Browser.Events exposing (onAnimationFrameDelta, onResize)
+import Browser.Events exposing (onAnimationFrameDelta)
+
 import Html exposing (Html, text)
 import Html.Attributes exposing (style)
+import Html.Events exposing (on)
+
+import Json.Decode as Decode
+
 import Canvas exposing (shapes, circle)
 import Canvas.Settings exposing (fill, stroke)
 --import Canvas.Settings.Advanced exposing (..)
@@ -16,8 +21,25 @@ import Color
 
 
 type alias Model =
-  { canvSize : (Int, Int) 
+  { canvSize : (Int, Int)
+  , clickState : ClickState
   }
+
+
+{- This type is needed for changing the moving direction 
+   of the ball. 
+
+   If user holds mouse click then the ball will 
+   change its direction and get acceleration.
+
+   If user stops holding mouse click 
+   the ball will not change its direction 
+   but lose its acceleration 
+   (its speed will be constantly)
+-}
+
+type ClickState
+  = Hold | NotHold
 
 
 
@@ -26,7 +48,8 @@ type alias Model =
 
 init : (Int, Int) -> (Model, Cmd Msg)
 init (width, height) =
-  ( { canvSize = toCanvSize (width, height) 
+  ( { canvSize = toCanvSize (width, height)
+    , clickState = NotHold
     }
   , Cmd.none
   )
@@ -51,11 +74,25 @@ type Msg
   -- It is msg that is called 60 times per sec
   -- for repaint (update) the canvas
   = Frame Float
+  | ClickDown
+  | ClickUp
 
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
-  (model, Cmd.none)
+  case msg of
+    Frame _ ->
+      (model, Cmd.none)
+
+    ClickDown ->
+      ( { model | clickState = Hold }
+      , Cmd.none
+      )
+
+    ClickUp ->
+      ( { model | clickState = NotHold }
+      , Cmd.none
+      )
 
 
 
@@ -66,7 +103,7 @@ update msg model =
 subscriptions : Model -> Sub Msg
 subscriptions model =
   Sub.batch
-    [ onAnimationFrameDelta Frame 
+    [ onAnimationFrameDelta Frame
     ]
 
 
@@ -81,8 +118,17 @@ view model =
     [ if checkCanvSize model.canvSize
       then
         Canvas.toHtml model.canvSize
-          []
-          [ shapes [ fill Color.red ] [ circle (150, 150) 80 ]
+          [ on "touchstart" (Decode.succeed ClickDown)
+          , on "touchend" (Decode.succeed ClickUp)
+          , on "mousedown" (Decode.succeed ClickDown)
+          , on "mouseup" (Decode.succeed ClickUp)   
+          ]
+          [ shapes 
+              [ case model.clickState of
+                  Hold -> fill Color.red
+                  NotHold -> fill Color.green 
+              ] 
+              [ circle (150, 150) 80 ]
           ]
   
       else
