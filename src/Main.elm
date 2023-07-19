@@ -130,7 +130,40 @@ update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
     Frame _ ->
-      (onFrame model, Cmd.none)
+      case model.levelState of
+        Init ->
+          ( model
+          , Cmd.none
+          )
+
+        Pause ->
+          ( model
+          , Cmd.none
+          )
+
+        Play ->
+          if isCollision model 
+          then
+            ( { model | levelState = Over False 
+              }
+            , Cmd.none 
+            )
+          else if False 
+          then
+            ( { model | levelState = Over True 
+              }
+            , Cmd.none 
+            )
+          else
+            ( onFramePlay model
+            , Cmd.none 
+            )
+
+        Over isWin ->
+          ( model
+          , Cmd.none
+          )
+
 
     ClickDown ->
       ( { model 
@@ -150,6 +183,7 @@ update msg model =
       , Cmd.none
       )
 
+
     ClickUp ->
       ( { model 
           | clickState = NotHold
@@ -168,8 +202,12 @@ update msg model =
       )
 
 
-onFrame : Model -> Model
-onFrame model =
+{- The func that updates the game objects (ball, trees...)
+   during the game (levelState = Play)
+-}
+
+onFramePlay : Model -> Model
+onFramePlay model =
   { model 
     | ball =
         model.ball
@@ -187,6 +225,19 @@ move (x, y) dx dy =
   (x + dx, y + dy)
 
 
+isCollision : Model -> Bool
+isCollision model =
+  let
+    (x, y) = model.ball.pos
+    (w, h) = model.canvSize
+  in
+    -- Check collision with the walls
+    if x < 0 || x > (toFloat w) then 
+      True
+    else
+      False 
+
+
 
 
 -- SUBSCRIPTIONS
@@ -194,18 +245,7 @@ move (x, y) dx dy =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-  case model.levelState of
-    Init -> 
-      Sub.none
-
-    Pause -> 
-      Sub.none
-
-    Play -> 
-      onAnimationFrameDelta Frame
-
-    Over _ -> 
-      Sub.none 
+  onAnimationFrameDelta Frame 
   
 
 
