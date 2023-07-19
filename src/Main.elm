@@ -26,6 +26,10 @@ type alias Model =
   { canvSize : (Int, Int)
   , clickState : ClickState
   , levelState : LevelState
+  -- framesCount is the count of the game frames that is needed for 
+  -- determining of the time of passing a level and what game 
+  -- animations must be rendered at the determined game time 
+  , framesCount : Int
   -- current game level
   , level : Int
   , ball : Ball
@@ -79,26 +83,15 @@ ballAcceleration = 0.2
 init : (Int, Int) -> (Model, Cmd Msg)
 init (screenWidth, screenHeight) =
   let
-    (canvWidth, canvHeight) = toCanvSize (screenWidth, screenHeight)
+    canvSize = toCanvSize (screenWidth, screenHeight)
   in
-    ( { canvSize = 
-          ( canvWidth
-          , canvHeight
-          )
+    ( { canvSize = canvSize
       , clickState = NotHold
       , levelState = Init
+      , framesCount = 0
       , level = 0
-      , ball = 
-          { pos = 
-              ( toFloat canvWidth |> (*) 0.5
-              , toFloat canvHeight |> (*) 0.3
-              )
-          , radius = toFloat canvWidth |> (*) 0.015
-          , ux = ballSpeed
-          , ax = 0 
-          }
+      , ball = ballStartPos canvSize
       }
-
     , Cmd.none
     )
 
@@ -111,6 +104,17 @@ toCanvSize (screenWidth, screenHeight) =
     ( min screenWidth maxCanvWidth
     , min screenHeight maxCanvHeight
     )
+
+
+ballStartPos (canvWidth, canvHeight) =
+  { pos = 
+      ( toFloat canvWidth |> (*) 0.5
+      , toFloat canvHeight |> (*) 0.3
+      )
+  , radius = toFloat canvWidth |> (*) 0.015
+  , ux = ballSpeed
+  , ax = 0 
+  }
 
 
 
@@ -132,37 +136,68 @@ update msg model =
     Frame _ ->
       case model.levelState of
         Init ->
-          ( model
-          , Cmd.none
-          )
+          if model.framesCount < 300 {- ~4 sec -} then
+            ( { model
+                | framesCount = model.framesCount + 1
+                , ball = ballStartPos model.canvSize
+              }
+            , Cmd.none
+            )
+          else
+            ( { model 
+                | clickState = NotHold
+                , framesCount = 0
+              }
+            , Cmd.none
+            )
+
 
         Pause ->
           ( model
           , Cmd.none
           )
 
+
         Play ->
-          if isCollision model 
-          then
-            ( { model | levelState = Over False 
+          if isCollision model then
+            ( { model 
+                | levelState = Over False
+                , framesCount = 0 
               }
             , Cmd.none 
             )
-          else if False 
-          then
-            ( { model | levelState = Over True 
+
+          else if False then
+            ( { model 
+                | levelState = Over True
+                , framesCount = 0 
               }
             , Cmd.none 
             )
+
           else
             ( onFramePlay model
             , Cmd.none 
             )
 
+
         Over isWin ->
-          ( model
-          , Cmd.none
-          )
+          if model.framesCount < 180 {- ~2 sec -} then
+            ( { model | framesCount = model.framesCount + 1 }
+            , Cmd.none
+            )
+          else
+            ( { model 
+                | levelState = Init
+                , framesCount = 0
+                , level = 
+                    if isWin then 
+                      model.level + 1 
+                    else 
+                      model.level
+                }
+            , Cmd.none
+            )
 
 
     ClickDown ->
