@@ -25,19 +25,16 @@ import Debug exposing (..)
 type alias Model =
   { canvSize : (Int, Int)
   , clickState : ClickState
-  , levelState : LevelState
-  -- framesCount is the count of the game frames that is needed for 
-  -- determining of the time of passing a level and what game 
-  -- animations must be rendered at the determined game time 
-  , framesCount : Int
+  , gameState : GameState
   -- current game level
   , level : Int
   , ball : Ball
+  , trees : Trees
   }
 
 
-{- This type is needed for changing the moving direction 
-   of the ball. 
+{- This type (ClickState) is needed for changing the 
+   moving direction of the ball. 
 
    If user holds mouse click then the ball will 
    change its direction and get acceleration.
@@ -52,15 +49,8 @@ type ClickState
   = Hold | NotHold
 
 
-type LevelState
-  -- Init of the game level (before playing) 
-  = Init
-  | Pause
-  | Play
-  -- Game level over. 
-  -- True/False is successful/unsuccessful passed level
-  -- If is true then new level will be loaded  
-  | Over Bool
+type GameState
+  = Play | Pause
 
 
 type alias Ball =
@@ -76,6 +66,9 @@ ballSpeed = 5 -- without acceleration
 ballAcceleration = 0.2
 
 
+type alias Trees = List Point
+
+
 
 
 -- The func init gets screen width and height from JS 
@@ -87,10 +80,10 @@ init (screenWidth, screenHeight) =
   in
     ( { canvSize = canvSize
       , clickState = NotHold
-      , levelState = Init
-      , framesCount = 0
+      , gameState = Pause
       , level = 0
       , ball = ballStartPos canvSize
+      , trees = []
       }
     , Cmd.none
     )
@@ -134,76 +127,32 @@ update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
     Frame _ ->
-      case model.levelState of
-        Init ->
-          if model.framesCount < 300 {- ~4 sec -} then
-            ( { model
-                | framesCount = model.framesCount + 1
-                , ball = ballStartPos model.canvSize
-              }
-            , Cmd.none
-            )
-          else
-            ( { model 
-                | clickState = NotHold
-                , framesCount = 0
-              }
+      case model.gameState of
+        Play ->
+          if isCollision model.ball model.trees model.canvSize then
+            ( { model | gameState = Pause }
             , Cmd.none
             )
 
+          else if isWin model.ball model.trees then
+            ( { model | gameState = Pause, level = model.level + 1 }
+            , Cmd.none
+            )
+
+          else
+            ( onFrame model
+            , Cmd.none
+            )
 
         Pause ->
-          ( model
-          , Cmd.none
-          )
-
-
-        Play ->
-          if isCollision model then
-            ( { model 
-                | levelState = Over False
-                , framesCount = 0 
-              }
-            , Cmd.none 
-            )
-
-          else if False then
-            ( { model 
-                | levelState = Over True
-                , framesCount = 0 
-              }
-            , Cmd.none 
-            )
-
-          else
-            ( onFramePlay model
-            , Cmd.none 
-            )
-
-
-        Over isWin ->
-          if model.framesCount < 180 {- ~2 sec -} then
-            ( { model | framesCount = model.framesCount + 1 }
-            , Cmd.none
-            )
-          else
-            ( { model 
-                | levelState = Init
-                , framesCount = 0
-                , level = 
-                    if isWin then 
-                      model.level + 1 
-                    else 
-                      model.level
-                }
-            , Cmd.none
-            )
+          (model, Cmd.none)
 
 
     ClickDown ->
       ( { model 
           | clickState = Hold
-          , levelState = Play
+          -- Start game
+          , gameState = Play
           , ball =
               model.ball
                 |> \ball -> 
@@ -238,11 +187,11 @@ update msg model =
 
 
 {- The func that updates the game objects (ball, trees...)
-   during the game (levelState = Play)
+   during the game (gameState = Play)
 -}
 
-onFramePlay : Model -> Model
-onFramePlay model =
+onFrame : Model -> Model
+onFrame model =
   { model 
     | ball =
         model.ball
@@ -260,17 +209,31 @@ move (x, y) dx dy =
   (x + dx, y + dy)
 
 
-isCollision : Model -> Bool
-isCollision model =
+isCollision : Ball -> Trees -> (Int, Int) -> Bool
+isCollision ball trees canvSize =
   let
-    (x, y) = model.ball.pos
-    (w, h) = model.canvSize
+    (x, y) = ball.pos
+    (w, h) = canvSize
   in
     -- Check collision with the walls
     if x < 0 || x > (toFloat w) then 
       True
     else
-      False 
+      False
+
+
+{- Trees are the obstacles for the game ball.
+   If all oobstacles are passed then the level 
+   will be passed too.
+-}
+
+isWin : Ball -> Trees -> Bool
+isWin ball trees =
+  let
+    ballY = Tuple.first ball.pos
+  in
+    List.map (\(x,y) -> if y > ballY then True else False) trees
+      |> List.member False
 
 
 
@@ -280,7 +243,9 @@ isCollision model =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-  onAnimationFrameDelta Frame 
+  case model.gameState of
+    Play -> onAnimationFrameDelta Frame
+    Pause -> Sub.none
   
 
 
