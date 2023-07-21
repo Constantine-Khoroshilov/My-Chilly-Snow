@@ -71,7 +71,7 @@ type alias Ball =
 ballUX = 5
 ballAX = 0.2
 
-ballStartPos (canvWidth, canvHeight) =
+ballStartState (canvWidth, canvHeight) =
   { pos = 
       ( toFloat canvWidth |> (*) 0.5
       , toFloat canvHeight |> (*) 0.3
@@ -105,16 +105,17 @@ init (screenWidth, screenHeight) =
   let
     canvSize = toCanvSize (screenWidth, screenHeight)
     levelLength = 3000 + (Tuple.second canvSize)
+    ball = ballStartState canvSize
   in
     ( { canvSize = canvSize
       , clickState = NotHold
       , gameState = Stop
       , level = 1
       , levelLength = levelLength
-      , ball = ballStartPos canvSize
+      , ball = ball
       , trees = Trees [] minTreesUY treesAY
       }
-    , initLevel canvSize (ballStartPos canvSize) levelLength
+    , initLevel canvSize ball levelLength
     )
 
 
@@ -172,7 +173,7 @@ update msg model =
     LevelInit pos ->
       ( { model
           | clickState = NotHold
-          , ball = ballStartPos model.canvSize
+          , ball = ballStartState model.canvSize
           , trees = 
               model.trees 
                 |> \trees -> 
