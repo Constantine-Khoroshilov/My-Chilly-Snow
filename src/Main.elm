@@ -10,10 +10,12 @@ import Html.Events exposing (on)
 import Json.Decode as Decode
 import Random
 
-import Canvas exposing (Point, shapes)
+import Canvas exposing (Point, shapes, group)
 import Canvas.Settings exposing (fill, stroke)
 --import Canvas.Settings.Advanced exposing (..)
 import Color
+
+import Tuple exposing (first, second)
 
 import Debug exposing (..)
 
@@ -29,9 +31,12 @@ type alias Model =
   , gameState : GameState
   -- the current game level
   , level : Int
-  -- the higher the level, the longer the length of the level
-  -- measured in pixels
-  , levelLength : Int
+  -- the higher the level num, the longer the size of the level
+  -- measured in pixels by height 
+  , levelSize : Int
+  -- the passed part of a level during the game
+  -- measured in pixels by height
+  , levelPassed : Int
   , ball : Ball
   , trees : Trees
   }
@@ -101,21 +106,26 @@ treesAY = -0.015
 -- The func init gets screen width and height from JS 
 
 init : (Int, Int) -> (Model, Cmd Msg)
-init (screenWidth, screenHeight) =
+init screenSize =
   let
-    canvSize = toCanvSize (screenWidth, screenHeight)
-    levelLength = 3000 + (Tuple.second canvSize)
+    canvSize = toCanvSize screenSize
+    levelSize = 3000 + (second canvSize)
     ball = ballStartState canvSize
   in
     ( { canvSize = canvSize
       , clickState = NotHold
       , gameState = Stop
       , level = 1
-      , levelLength = levelLength
+      , levelSize = levelSize
+      , levelPassed = 0
       , ball = ball
-      , trees = Trees [] minTreesUY treesAY
+      , trees =
+          { positions = []
+          , uy = minTreesUY
+          , ay = treesAY
+          }
       }
-    , initLevel canvSize ball levelLength
+    , initLevel canvSize ball levelSize
     )
 
 
@@ -144,55 +154,56 @@ type Msg
 
 
 update : Msg -> Model -> (Model, Cmd Msg)
-update msg model =
+update msg m =
   case msg of
     Frame _ ->
-      if isCollision model.ball model.trees model.canvSize 
+      if isCollision m.ball m.trees m.canvSize 
       then
-        ( { model | gameState = Stop 
+        ( { m | gameState = Stop 
           }
-        , initLevel model.canvSize model.ball model.levelLength
+        , initLevel m.canvSize m.ball m.levelSize
         )
 
-      else if isLevelComplete model.trees 
+      else if m.levelPassed >= m.levelSize  
       then
-        ( { model 
+        ( { m 
             | gameState = Stop
-            , level = model.level + 1
-            , levelLength = model.levelLength + 3000 
+            , level = m.level + 1
+            , levelSize = m.levelSize + 3000 
           }
-        , initLevel model.canvSize model.ball model.levelLength
+        , initLevel m.canvSize m.ball m.levelSize
         )
 
       else
-        ( onFrame model
+        ( onFrame m
         , Cmd.none
         )
 
 
     LevelInit pos ->
-      ( { model
+      ( { m
           | clickState = NotHold
-          , ball = ballStartState model.canvSize
+          , levelPassed = 0
+          , ball = ballStartState m.canvSize
           , trees = 
-              model.trees 
+              m.trees 
                 |> \trees -> 
-                  { trees 
-                    | positions = pos
-                    , uy = minTreesUY
-                  }   
+                      { trees 
+                        | positions = pos
+                        , uy = minTreesUY
+                      }   
         }
       , Cmd.none
       )
 
 
     ClickDown ->
-      ( { model 
+      ( { m 
           | clickState = Hold
           -- Start game
           , gameState = Play
           , ball =
-              model.ball
+              m.ball
                 |> \ball -> 
                       { ball 
                         | ux = -ball.ux
@@ -207,10 +218,10 @@ update msg model =
 
 
     ClickUp ->
-      ( { model 
+      ( { m 
           | clickState = NotHold
           , ball = 
-              model.ball
+              m.ball
                 |> \ball -> 
                       { ball 
                         | ax = 0
@@ -225,31 +236,32 @@ update msg model =
 
 
 onFrame : Model -> Model
-onFrame model =
-  { model
-    | ball =
-        model.ball
+onFrame m =
+  { m
+    | levelPassed = m.levelPassed - (floor m.trees.uy)
+    , ball =
+        m.ball
           |> \ball -> 
                 { ball 
-                  | pos = move ball.pos ball.ux 0
+                  | pos = move ball.ux 0 ball.pos
                   -- Increase speed by acceleration
                   , ux = ball.ux + ball.ax 
                 }
     , trees =
-        model.trees
+        m.trees
           |> \trees ->
                 { trees
                   | uy = max maxTreesUY (trees.uy + trees.ay)
                   , positions = 
-                      List.map 
-                        (\(x, y) -> (x, y + trees.uy)) 
-                        trees.positions
+                      trees.positions
+                        |> List.map (move 0 trees.uy)
+                        
                 }
   }
 
 
-move : Point -> Float -> Float -> Point
-move (x, y) dx dy =
+move : Float -> Float -> Point -> Point
+move dx dy (x, y) =
   (x + dx, y + dy)
 
 
@@ -266,33 +278,21 @@ isCollision ball trees canvSize =
     ( List.filter (\(x, y) -> y < (toFloat h)) trees.positions
         |> List.any (\(x, y) -> (bx - x)^2 + (by - y)^2 <= r^2)
     )
-      
-
-isLevelComplete : Trees -> Bool
-isLevelComplete trees =
-  let
-    lastTreeY = 
-      List.map Tuple.second trees.positions
-        |> List.maximum
-        |> Maybe.withDefault 0 
-  in
-    lastTreeY < 0
 
 
 initLevel : (Int, Int) -> Ball -> Int -> Cmd Msg
-initLevel (width, height) ball levelLength =
+initLevel (width, height) ball levelSize =
   let
     -- paddings
     px = 50
     py = 100
 
-    ballY = Tuple.second ball.pos
+    ballY = second ball.pos
 
     -- canvas size
     (w, h) = (toFloat width, toFloat height)
 
-    -- level length
-    l = toFloat levelLength
+    l = toFloat levelSize
 
     pointGenerator : Random.Generator Point
     pointGenerator =
@@ -311,8 +311,8 @@ initLevel (width, height) ball levelLength =
 
 
 subscriptions : Model -> Sub Msg
-subscriptions model =
-  case model.gameState of
+subscriptions m =
+  case m.gameState of
     Play ->
       onAnimationFrameDelta Frame
 
@@ -326,20 +326,21 @@ subscriptions model =
 
 
 view : Model -> Html Msg
-view model =
+view m =
   Html.main_ []
-    [ if checkCanvSize model.canvSize
+    [ if checkCanvSize m.canvSize
       then
-        Canvas.toHtml model.canvSize
+        Canvas.toHtml m.canvSize
           [ on "touchstart" (Decode.succeed ClickDown)
           , on "touchend" (Decode.succeed ClickUp)
           , on "mousedown" (Decode.succeed ClickDown)
           , on "mouseup" (Decode.succeed ClickUp)   
           ]
-          [ clear model.canvSize
-          , drawBall model.ball Color.orange
-          , List.map (\pos -> Canvas.circle pos 5) model.trees.positions 
+          [ clear m.canvSize
+          , List.map (\pos -> Canvas.circle pos 5) m.trees.positions 
               |> shapes [ fill Color.green ]
+          , drawBall m.ball Color.orange
+          , statusBar m
           ]
   
       else
@@ -381,6 +382,45 @@ drawBall ball color =
   shapes 
     [ fill color ] 
     [ Canvas.circle ball.pos ball.radius ]
+
+
+statusBar : Model -> Canvas.Renderable
+statusBar m =
+  let
+    width = m.canvSize |> first |> toFloat
+    height = m.canvSize |> second |> toFloat 
+
+    top = 0.1 * height
+
+    (x1, y1) = (0.3 * width, top)
+    (x2, y2) = (0.7 * width, top)
+    r = 0.025 * height
+
+    h = r^2 + r^2 |> sqrt
+    (x3, y3) = (x1 + h/2, top - h/2)
+    w1 = x2 - x1 - h
+
+    l = toFloat m.levelSize
+    p = toFloat m.levelPassed
+
+    w2 = p / l * w1
+
+    color = Color.rgb255 54 79 107
+  in
+    group [ stroke color ]
+      [ shapes
+          [ fill Color.white ]
+          [ Canvas.rect (x3, y3) w1 h ]
+      , shapes
+          [ fill color ]
+          [ Canvas.rect (x3, y3) w2 h ]
+      , shapes 
+          [ fill color ] 
+          [ Canvas.circle (x1, y1) r ]
+      , shapes
+          [ fill Color.white ]
+          [ Canvas.circle (x2, y2) r ]
+      ] 
 
 
 
