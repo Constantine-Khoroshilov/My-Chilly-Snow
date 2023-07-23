@@ -37,8 +37,12 @@ type alias Model =
   -- the passed part of a level during the game
   -- measured in pixels by height
   , levelPassed : Int
+  -- this is the velocity vec all game objects except the ball
+  -- it is always negative and affects on Y coord, so directed upwards
+  , slipVelocity : Float
+  , treesStartPos : List Point
+  , treesPos : List Point
   , ball : Ball
-  , trees : Trees
   }
 
 
@@ -67,13 +71,13 @@ type GameState
 type alias Ball =
   { pos : Point
   , radius : Float
-  -- The speed vec
-  , ux : Float
+  -- The velocity vec
+  , vx : Float
   -- The acceleration vec 
   , ax : Float
   }
 
-ballUX = 5
+ballVX = 5
 ballAX = 0.2
 
 ballStartState (canvWidth, canvHeight) =
@@ -82,23 +86,15 @@ ballStartState (canvWidth, canvHeight) =
       , toFloat canvHeight |> (*) 0.3
       )
   , radius = toFloat canvWidth |> (*) 0.015
-  , ux = ballUX
+  , vx = ballVX
   , ax = 0
   }
 
-
-type alias Trees = 
-    { positions : List Point
-    -- uy and ay vecs must be less 0 
-    , uy : Float
-    , ay : Float
-    }
-
 -- max or min by module
 
-minTreesUY = -2
-maxTreesUY = -10
-treesAY = -0.015
+minSlipVel = -2
+maxSlipVel = -10
+slipAcceleration = -0.015
 
 
 
@@ -109,24 +105,19 @@ init : (Int, Int) -> (Model, Cmd Msg)
 init screenSize =
   let
     canvSize = toCanvSize screenSize
-    levelSize = 3000 + (second canvSize)
-    ball = ballStartState canvSize
   in
-    ( { canvSize = canvSize
+    loadNextLevel
+      { canvSize = canvSize
       , clickState = NotHold
       , gameState = Stop
-      , level = 1
-      , levelSize = levelSize
+      , level = 0
+      , levelSize = second canvSize
       , levelPassed = 0
-      , ball = ball
-      , trees =
-          { positions = []
-          , uy = minTreesUY
-          , ay = treesAY
-          }
+      , slipVelocity = minSlipVel
+      , treesStartPos = []
+      , treesPos = []
+      , ball = ballStartState canvSize
       }
-    , initLevel canvSize ball levelSize
-    )
 
 
 toCanvSize (screenWidth, screenHeight) =
@@ -148,7 +139,7 @@ type Msg
   -- It is msg that is called 60 times per sec
   -- for repaint (update) the canvas
   = Frame Float
-  | LevelInit (List Point)
+  | SetTreesPos (List Point)
   | ClickDown
   | ClickUp
 
@@ -157,22 +148,13 @@ update : Msg -> Model -> (Model, Cmd Msg)
 update msg m =
   case msg of
     Frame _ ->
-      if isCollision m.ball m.trees m.canvSize 
+      if isCollision m.ball m.treesPos m.canvSize 
       then
-        ( { m | gameState = Stop 
-          }
-        , initLevel m.canvSize m.ball m.levelSize
-        )
+        restartLevel m
 
       else if m.levelPassed >= m.levelSize  
       then
-        ( { m 
-            | gameState = Stop
-            , level = m.level + 1
-            , levelSize = m.levelSize + 3000 
-          }
-        , initLevel m.canvSize m.ball m.levelSize
-        )
+        loadNextLevel m
 
       else
         ( onFrame m
@@ -180,18 +162,10 @@ update msg m =
         )
 
 
-    LevelInit pos ->
-      ( { m
-          | clickState = NotHold
-          , levelPassed = 0
-          , ball = ballStartState m.canvSize
-          , trees = 
-              m.trees 
-                |> \trees -> 
-                      { trees 
-                        | positions = pos
-                        , uy = minTreesUY
-                      }   
+    SetTreesPos pos ->
+      ( { m 
+          | treesStartPos = pos
+          , treesPos = pos 
         }
       , Cmd.none
       )
@@ -206,10 +180,10 @@ update msg m =
               m.ball
                 |> \ball -> 
                       { ball 
-                        | ux = -ball.ux
+                        | vx = -ball.vx
                         , ax =
                             -- Set the ball acceleration
-                            if ball.ux > 0 then -ballAX
+                            if ball.vx > 0 then -ballAX
                             else ballAX
                       }
         }
@@ -225,10 +199,10 @@ update msg m =
                 |> \ball -> 
                       { ball 
                         | ax = 0
-                        , ux =
+                        , vx =
                             -- Reset the ball speed
-                            if ball.ux > 0 then ballUX
-                            else -ballUX
+                            if ball.vx > 0 then ballVX
+                            else -ballVX
                       } 
         }
       , Cmd.none
@@ -238,25 +212,18 @@ update msg m =
 onFrame : Model -> Model
 onFrame m =
   { m
-    | levelPassed = m.levelPassed - (floor m.trees.uy)
+    | levelPassed = m.levelPassed - (floor m.slipVelocity)
+    , slipVelocity = max maxSlipVel (m.slipVelocity + slipAcceleration)
     , ball =
         m.ball
           |> \ball -> 
                 { ball 
-                  | pos = move ball.ux 0 ball.pos
+                  | pos = move ball.vx 0 ball.pos
                   -- Increase speed by acceleration
-                  , ux = ball.ux + ball.ax 
+                  , vx = ball.vx + ball.ax 
                 }
-    , trees =
-        m.trees
-          |> \trees ->
-                { trees
-                  | uy = max maxTreesUY (trees.uy + trees.ay)
-                  , positions = 
-                      trees.positions
-                        |> List.map (move 0 trees.uy)
-                        
-                }
+    , treesPos =
+        List.map (move 0 m.slipVelocity) m.treesPos
   }
 
 
@@ -265,7 +232,7 @@ move dx dy (x, y) =
   (x + dx, y + dy)
 
 
-isCollision : Ball -> Trees -> (Int, Int) -> Bool
+isCollision : Ball -> List Point -> (Int, Int) -> Bool
 isCollision ball trees canvSize =
   let
     (bx, by) = ball.pos
@@ -275,35 +242,69 @@ isCollision ball trees canvSize =
     -- Check collision with the walls
     bx < 0 || bx > (toFloat w) ||
     -- Check collision with the trees
-    ( List.filter (\(x, y) -> y < (toFloat h)) trees.positions
+    ( List.filter (\(x, y) -> y < (toFloat h)) trees
         |> List.any (\(x, y) -> (bx - x)^2 + (by - y)^2 <= r^2)
     )
 
 
-initLevel : (Int, Int) -> Ball -> Int -> Cmd Msg
-initLevel (width, height) ball levelSize =
+loadNextLevel : Model -> (Model, Cmd Msg)
+loadNextLevel m =
   let
-    -- paddings
-    px = 50
-    py = 100
-
-    ballY = second ball.pos
-
     -- canvas size
-    (w, h) = (toFloat width, toFloat height)
+    (w, h) = 
+      ( first m.canvSize |> toFloat
+      , second m.canvSize |> toFloat
+      )
+
+    -- increase the next level size
+    levelSize = m.levelSize + 3000
+    -- reset ball state
+    ball = ballStartState m.canvSize
 
     l = toFloat levelSize
+    ballY = second ball.pos
+    -- count of trees
+    count = floor (0.015 * l)
+
+    -- paddings
+    py = 100
+    px = 50
 
     pointGenerator : Random.Generator Point
     pointGenerator =
       Random.pair
+        -- X coord
         (Random.float px (w - px))
-        (Random.float (ballY + py) (l - py)) 
-
-    count = floor (0.015 * l)
+        -- Y coord
+        (Random.float (ballY + py) (l - ballY - py)) 
   in
-    Random.list count pointGenerator
-      |> Random.generate LevelInit
+    ( { m 
+        | gameState = Stop
+        , clickState = NotHold
+        , level = m.level + 1
+        , levelSize = levelSize
+        , levelPassed = 0
+        , slipVelocity = minSlipVel
+        , treesStartPos = []
+        , treesPos = []
+        , ball = ball
+      }
+    , Random.list count pointGenerator
+        |> Random.generate SetTreesPos
+    )
+
+
+restartLevel m =
+  ( { m 
+      | gameState = Stop
+      , levelPassed = 0
+      , slipVelocity = minSlipVel
+      , treesPos = m.treesStartPos
+      , ball = ballStartState m.canvSize
+    }
+  , Cmd.none
+  )
+
 
 
 
@@ -337,7 +338,7 @@ view m =
           , on "mouseup" (Decode.succeed ClickUp)   
           ]
           [ clear m.canvSize
-          , List.map (\pos -> Canvas.circle pos 5) m.trees.positions 
+          , List.map (\pos -> Canvas.circle pos 5) m.treesPos
               |> shapes [ fill Color.green ]
           , drawBall m.ball Color.orange
           , statusBar m
