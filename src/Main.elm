@@ -12,6 +12,7 @@ import Random
 
 import Canvas exposing (Point, shapes, group)
 import Canvas.Settings exposing (fill, stroke)
+import Canvas.Settings.Text exposing (TextAlign(..), font, align)
 --import Canvas.Settings.Advanced exposing (..)
 import Color
 
@@ -77,7 +78,7 @@ type alias Ball =
   , ax : Float
   }
 
-ballVX = 5
+ballVX = 4.5
 ballAX = 0.2
 
 ballStartState (canvWidth, canvHeight) =
@@ -93,8 +94,8 @@ ballStartState (canvWidth, canvHeight) =
 -- max or min by module
 
 minSlipVel = -2
-maxSlipVel = -10
-slipAcceleration = -0.015
+maxSlipVel = -8
+slipAcceleration = -0.005
 
 
 
@@ -257,7 +258,7 @@ loadNextLevel m =
       )
 
     -- increase the next level size
-    levelSize = m.levelSize + 3000
+    levelSize = m.levelSize + 1500
     -- reset ball state
     ball = ballStartState m.canvSize
 
@@ -391,28 +392,38 @@ statusBar m =
     width = m.canvSize |> first |> toFloat
     height = m.canvSize |> second |> toFloat 
 
-    top = 0.1 * height
-
-    (x1, y1) = (0.3 * width, top)
-    (x2, y2) = (0.7 * width, top)
+    (x1, y1) = (0.3 * width, 0.1 * height)
+    (x2, y2) = (0.7 * width, 0.1 * height)
     r = 0.025 * height
 
     h = r^2 + r^2 |> sqrt
-    (x3, y3) = (x1 + h/2, top - h/2)
+    (x3, y3) = (x1 + h/2, y1 - h/2)
     w1 = x2 - x1 - h
 
     l = toFloat m.levelSize
     p = toFloat m.levelPassed
-
     w2 = p / l * w1
 
+    -- general color
     color = Color.rgb255 54 79 107
+
+    print (x, y) fillColor strokeColor level =
+      Canvas.text
+        [ font { size = 16, family = "Arial" }
+        , align Center
+        , fill fillColor
+        , stroke strokeColor
+        ]
+        (x, y + 4.5)
+        (String.fromInt level)
+
   in
     group [ stroke color ]
-      [ shapes
-          [ fill Color.white ]
+      [ shapes 
+          [ fill Color.white
+          ]
           [ Canvas.rect (x3, y3) w1 h ]
-      , shapes
+      , shapes 
           [ fill color ]
           [ Canvas.rect (x3, y3) w2 h ]
       , shapes 
@@ -421,7 +432,10 @@ statusBar m =
       , shapes
           [ fill Color.white ]
           [ Canvas.circle (x2, y2) r ]
-      ] 
+
+      , print (x1, y1) Color.white Color.white m.level
+      , print (x2, y2) color color (m.level + 1)
+      ]
 
 
 
