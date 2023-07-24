@@ -13,12 +13,9 @@ import Random
 import Canvas exposing (Point, shapes, group, lineTo)
 import Canvas.Settings exposing (fill, stroke)
 import Canvas.Settings.Text exposing (TextAlign(..), font, align)
---import Canvas.Settings.Advanced exposing (..)
 import Color
 
 import Tuple exposing (first, second)
-
-import Debug exposing (..)
 
 
 
@@ -340,7 +337,7 @@ view m =
           ]
           [ clear m.canvSize
           , finishLine m
-          , drawBall m.ball Color.orange
+          , paintBall m.ball
           , trees m
           , statusBar m
           ]
@@ -379,10 +376,10 @@ clear (canvWidth, canvHeight) =
     Canvas.clear (0, 0) width height
 
 
-drawBall : Ball -> Color.Color -> Canvas.Renderable
-drawBall ball color =
+paintBall : Ball -> Canvas.Renderable
+paintBall ball =
   shapes 
-    [ fill color ] 
+    [ fill (Color.rgb255 246 74 70) ] 
     [ Canvas.circle ball.pos ball.radius ]
 
 
@@ -495,7 +492,7 @@ trees m =
               , lineTo  ( x + (bigBase / 1.7) + (postW / 2), y - postH       )  
               ]
         ) m.treesPos
-          |> shapes [ fill (Color.rgb255 71 167 106) ]
+          |> shapes [ fill (Color.rgb255 71 167 106), stroke (Color.rgb255 66 94 23) ]
 
     smallTriangle =
       List.map 
@@ -505,7 +502,7 @@ trees m =
               , lineTo  ( x + (bigBase / 2) + (postW / 2), y - 2.2 * postH   )  
               ]
         ) m.treesPos
-          |> shapes [ fill (Color.rgb255 71 167 106) ]
+          |> shapes [ fill (Color.rgb255 71 167 106), stroke (Color.rgb255 66 94 23) ]
   in
     group [] 
       [ posts
