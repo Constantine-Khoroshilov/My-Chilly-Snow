@@ -10,7 +10,7 @@ import Html.Events exposing (on)
 import Json.Decode as Decode
 import Random
 
-import Canvas exposing (Point, shapes, group)
+import Canvas exposing (Point, shapes, group, lineTo)
 import Canvas.Settings exposing (fill, stroke)
 import Canvas.Settings.Text exposing (TextAlign(..), font, align)
 --import Canvas.Settings.Advanced exposing (..)
@@ -234,7 +234,7 @@ move dx dy (x, y) =
 
 
 isCollision : Ball -> List Point -> (Int, Int) -> Bool
-isCollision ball trees canvSize =
+isCollision ball treesPos canvSize =
   let
     (bx, by) = ball.pos
     (w, h) = canvSize
@@ -243,7 +243,7 @@ isCollision ball trees canvSize =
     -- Check collision with the walls
     bx < 0 || bx > (toFloat w) ||
     -- Check collision with the trees
-    ( List.filter (\(x, y) -> y < (toFloat h)) trees
+    ( List.filter (\(x, y) -> y < (toFloat h)) treesPos
         |> List.any (\(x, y) -> (bx - x)^2 + (by - y)^2 <= r^2)
     )
 
@@ -339,11 +339,10 @@ view m =
           , on "mouseup" (Decode.succeed ClickUp)   
           ]
           [ clear m.canvSize
-          , List.map (\pos -> Canvas.circle pos 5) m.treesPos
-              |> shapes [ fill Color.green ]
-          , drawBall m.ball Color.orange
-          , statusBar m
           , finishLine m
+          , drawBall m.ball Color.orange
+          , trees m
+          , statusBar m
           ]
   
       else
@@ -471,6 +470,48 @@ finishLine m =
   in
     List.append (cellLine posY1 True) (cellLine posY2 False)
       |> group []
+
+
+trees : Model -> Canvas.Renderable
+trees m =
+  let
+    width = m.canvSize |> first |> toFloat
+    height = m.canvSize |> second |> toFloat
+
+    postH = 0.01 * height
+    postW = 0.01 * width
+
+    posts =
+      List.map (\(x, y) -> Canvas.rect (x, y - postH) postW postH) m.treesPos
+        |> shapes [ fill (Color.rgb255 117 90 87) ]
+
+    bigBase = 0.05 * width
+
+    bigTriangle =
+      List.map 
+        ( \(x, y) -> 
+            Canvas.path ( x - (bigBase / 1.7) + (postW / 2), y - postH       )
+              [ lineTo  ( x  + (postW / 2)                 , y - 3.3 * postH )
+              , lineTo  ( x + (bigBase / 1.7) + (postW / 2), y - postH       )  
+              ]
+        ) m.treesPos
+          |> shapes [ fill (Color.rgb255 71 167 106) ]
+
+    smallTriangle =
+      List.map 
+        ( \(x, y) -> 
+            Canvas.path ( x - (bigBase / 2) + (postW / 2), y - 2.2 * postH   )
+              [ lineTo  ( x + (postW / 2)                , y - 4 * postH     )
+              , lineTo  ( x + (bigBase / 2) + (postW / 2), y - 2.2 * postH   )  
+              ]
+        ) m.treesPos
+          |> shapes [ fill (Color.rgb255 71 167 106) ]
+  in
+    group [] 
+      [ posts
+      , bigTriangle
+      , smallTriangle 
+      ]   
 
 
 
