@@ -343,6 +343,7 @@ view m =
               |> shapes [ fill Color.green ]
           , drawBall m.ball Color.orange
           , statusBar m
+          , finishLine m
           ]
   
       else
@@ -436,6 +437,40 @@ statusBar m =
       , print (x1, y1) Color.white Color.white m.level
       , print (x2, y2) color color (m.level + 1)
       ]
+
+
+finishLine : Model -> Canvas.Renderable
+finishLine m =
+  let
+    width = first m.canvSize |> toFloat
+    -- square count
+    count = 40
+    -- square width (height)
+    w = width / count
+
+    posY1 = (m.levelSize - m.levelPassed |> toFloat) + (second m.ball.pos)
+    posY2 = posY1 + w
+
+    isEven n =
+      (modBy 2 n) == 0
+
+    cell (x, y) color =
+      shapes
+        [ fill color ]
+        [ Canvas.rect (x, y) w w ]
+
+    cellsColors flag = 
+      List.range 0 (count - 1)
+        |> List.map 
+            (\n -> if xor flag (isEven n) then Color.black else Color.white)
+
+    cellLine posY flag =
+      List.range 0 (count - 1)
+        |> List.map (\n -> ((toFloat n) * w, posY))
+        |> List.map2 (\color coords -> cell coords color) (cellsColors flag)
+  in
+    List.append (cellLine posY1 True) (cellLine posY2 False)
+      |> group []
 
 
 
