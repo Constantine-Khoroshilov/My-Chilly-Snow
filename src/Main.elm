@@ -25,6 +25,7 @@ import Tuple exposing (first, second)
 
 type alias Model =
   { canvSize : (Int, Int)
+  , isMobile : Bool
   , clickState : ClickState
   , gameState : GameState
   -- the current game level
@@ -103,9 +104,11 @@ init : (Int, Int) -> (Model, Cmd Msg)
 init screenSize =
   let
     canvSize = toCanvSize screenSize
+    isMobile = (first screenSize) <= (second screenSize)
   in
     loadNextLevel
       { canvSize = canvSize
+      , isMobile = isMobile
       , clickState = NotHold
       , gameState = Stop
       , level = 0
@@ -330,11 +333,16 @@ view m =
     [ if checkCanvSize m.canvSize
       then
         Canvas.toHtml m.canvSize
-          [ on "touchstart" (Decode.succeed ClickDown)
-          , on "touchend" (Decode.succeed ClickUp)
-          , on "mousedown" (Decode.succeed ClickDown)
-          , on "mouseup" (Decode.succeed ClickUp)   
-          ]
+          ( if m.isMobile
+            then
+              [ on "touchstart" (Decode.succeed ClickDown)
+              , on "touchend" (Decode.succeed ClickUp)
+              ]
+            else
+              [ on "mousedown" (Decode.succeed ClickDown)
+              , on "mouseup" (Decode.succeed ClickUp)   
+              ]
+          )
           [ clear m.canvSize
           , finishLine m
           , paintBall m.ball
