@@ -100,7 +100,7 @@ ballStartState (canvWidth, canvHeight) =
     }
 
 figureBallVel canvWidth =
-  0.66 * (toFloat canvWidth) / 60
+  (0.3 * (toFloat canvWidth) / 60)
     |> Debug.log "Velocity"
 
 -- max or min by module
