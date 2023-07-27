@@ -7240,7 +7240,7 @@ var $author$project$Main$view = function (m) {
 						$elm$json$Json$Decode$succeed($author$project$Main$ClickDown)),
 						A2(
 						$elm$html$Html$Events$on,
-						'touchend',
+						'touchcancel',
 						$elm$json$Json$Decode$succeed($author$project$Main$ClickUp))
 					]) : _List_fromArray(
 					[
