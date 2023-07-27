@@ -519,11 +519,11 @@ function _Debug_crash_UNUSED(identifier, fact1, fact2, fact3, fact4)
 
 function _Debug_regionToString(region)
 {
-	if (region.af.P === region.an.P)
+	if (region.ah.P === region.ap.P)
 	{
-		return 'on line ' + region.af.P;
+		return 'on line ' + region.ah.P;
 	}
-	return 'on lines ' + region.af.P + ' through ' + region.an.P;
+	return 'on lines ' + region.ah.P + ' through ' + region.ap.P;
 }
 
 
@@ -1857,9 +1857,9 @@ var _Platform_worker = F4(function(impl, flagDecoder, debugMetadata, args)
 	return _Platform_initialize(
 		flagDecoder,
 		args,
-		impl.a3,
+		impl.a5,
+		impl.bj,
 		impl.bh,
-		impl.bf,
 		function() { return function() {} }
 	);
 });
@@ -2720,8 +2720,8 @@ var _VirtualDom_mapEventRecord = F2(function(func, record)
 {
 	return {
 		w: func(record.w),
-		ag: record.ag,
-		ac: record.ac
+		ai: record.ai,
+		ae: record.ae
 	}
 });
 
@@ -2990,10 +2990,10 @@ function _VirtualDom_makeCallback(eventNode, initialHandler)
 
 		var value = result.a;
 		var message = !tag ? value : tag < 3 ? value.a : value.w;
-		var stopPropagation = tag == 1 ? value.b : tag == 3 && value.ag;
+		var stopPropagation = tag == 1 ? value.b : tag == 3 && value.ai;
 		var currentEventNode = (
 			stopPropagation && event.stopPropagation(),
-			(tag == 2 ? value.b : tag == 3 && value.ac) && event.preventDefault(),
+			(tag == 2 ? value.b : tag == 3 && value.ae) && event.preventDefault(),
 			eventNode
 		);
 		var tagger;
@@ -3943,11 +3943,11 @@ var _Browser_element = _Debugger_element || F4(function(impl, flagDecoder, debug
 	return _Platform_initialize(
 		flagDecoder,
 		args,
-		impl.a3,
+		impl.a5,
+		impl.bj,
 		impl.bh,
-		impl.bf,
 		function(sendToApp, initialModel) {
-			var view = impl.bi;
+			var view = impl.bk;
 			/**/
 			var domNode = args['node'];
 			//*/
@@ -3979,12 +3979,12 @@ var _Browser_document = _Debugger_document || F4(function(impl, flagDecoder, deb
 	return _Platform_initialize(
 		flagDecoder,
 		args,
-		impl.a3,
+		impl.a5,
+		impl.bj,
 		impl.bh,
-		impl.bf,
 		function(sendToApp, initialModel) {
-			var divertHrefToApp = impl.ae && impl.ae(sendToApp)
-			var view = impl.bi;
+			var divertHrefToApp = impl.ag && impl.ag(sendToApp)
+			var view = impl.bk;
 			var title = _VirtualDom_doc.title;
 			var bodyNode = _VirtualDom_doc.body;
 			var currNode = _VirtualDom_virtualize(bodyNode);
@@ -3992,12 +3992,12 @@ var _Browser_document = _Debugger_document || F4(function(impl, flagDecoder, deb
 			{
 				_VirtualDom_divertHrefToApp = divertHrefToApp;
 				var doc = view(model);
-				var nextNode = _VirtualDom_node('body')(_List_Nil)(doc.aS);
+				var nextNode = _VirtualDom_node('body')(_List_Nil)(doc.aU);
 				var patches = _VirtualDom_diff(currNode, nextNode);
 				bodyNode = _VirtualDom_applyPatches(bodyNode, currNode, patches, sendToApp);
 				currNode = nextNode;
 				_VirtualDom_divertHrefToApp = 0;
-				(title !== doc.bg) && (_VirtualDom_doc.title = title = doc.bg);
+				(title !== doc.bi) && (_VirtualDom_doc.title = title = doc.bi);
 			});
 		}
 	);
@@ -4053,12 +4053,12 @@ function _Browser_makeAnimator(model, draw)
 
 function _Browser_application(impl)
 {
-	var onUrlChange = impl.a9;
-	var onUrlRequest = impl.ba;
+	var onUrlChange = impl.bb;
+	var onUrlRequest = impl.bc;
 	var key = function() { key.a(onUrlChange(_Browser_getUrl())); };
 
 	return _Browser_document({
-		ae: function(sendToApp)
+		ag: function(sendToApp)
 		{
 			key.a = sendToApp;
 			_Browser_window.addEventListener('popstate', key);
@@ -4074,9 +4074,9 @@ function _Browser_application(impl)
 					var next = $elm$url$Url$fromString(href).a;
 					sendToApp(onUrlRequest(
 						(next
-							&& curr.aD === next.aD
-							&& curr.ar === next.ar
-							&& curr.aA.a === next.aA.a
+							&& curr.aF === next.aF
+							&& curr.at === next.at
+							&& curr.aC.a === next.aC.a
 						)
 							? $elm$browser$Browser$Internal(next)
 							: $elm$browser$Browser$External(href)
@@ -4084,13 +4084,13 @@ function _Browser_application(impl)
 				}
 			});
 		},
-		a3: function(flags)
+		a5: function(flags)
 		{
-			return A3(impl.a3, flags, _Browser_getUrl(), key);
+			return A3(impl.a5, flags, _Browser_getUrl(), key);
 		},
-		bi: impl.bi,
-		bh: impl.bh,
-		bf: impl.bf
+		bk: impl.bk,
+		bj: impl.bj,
+		bh: impl.bh
 	});
 }
 
@@ -4156,17 +4156,17 @@ var _Browser_decodeEvent = F2(function(decoder, event)
 function _Browser_visibilityInfo()
 {
 	return (typeof _VirtualDom_doc.hidden !== 'undefined')
-		? { a1: 'hidden', aT: 'visibilitychange' }
+		? { a3: 'hidden', aV: 'visibilitychange' }
 		:
 	(typeof _VirtualDom_doc.mozHidden !== 'undefined')
-		? { a1: 'mozHidden', aT: 'mozvisibilitychange' }
+		? { a3: 'mozHidden', aV: 'mozvisibilitychange' }
 		:
 	(typeof _VirtualDom_doc.msHidden !== 'undefined')
-		? { a1: 'msHidden', aT: 'msvisibilitychange' }
+		? { a3: 'msHidden', aV: 'msvisibilitychange' }
 		:
 	(typeof _VirtualDom_doc.webkitHidden !== 'undefined')
-		? { a1: 'webkitHidden', aT: 'webkitvisibilitychange' }
-		: { a1: 'hidden', aT: 'visibilitychange' };
+		? { a3: 'webkitHidden', aV: 'webkitvisibilitychange' }
+		: { a3: 'hidden', aV: 'visibilitychange' };
 }
 
 
@@ -4247,12 +4247,12 @@ var _Browser_call = F2(function(functionName, id)
 function _Browser_getViewport()
 {
 	return {
-		aI: _Browser_getScene(),
-		aM: {
-			aO: _Browser_window.pageXOffset,
-			aP: _Browser_window.pageYOffset,
-			aN: _Browser_doc.documentElement.clientWidth,
-			aq: _Browser_doc.documentElement.clientHeight
+		aK: _Browser_getScene(),
+		aO: {
+			aQ: _Browser_window.pageXOffset,
+			aR: _Browser_window.pageYOffset,
+			aP: _Browser_doc.documentElement.clientWidth,
+			as: _Browser_doc.documentElement.clientHeight
 		}
 	};
 }
@@ -4262,8 +4262,8 @@ function _Browser_getScene()
 	var body = _Browser_doc.body;
 	var elem = _Browser_doc.documentElement;
 	return {
-		aN: Math.max(body.scrollWidth, body.offsetWidth, elem.scrollWidth, elem.offsetWidth, elem.clientWidth),
-		aq: Math.max(body.scrollHeight, body.offsetHeight, elem.scrollHeight, elem.offsetHeight, elem.clientHeight)
+		aP: Math.max(body.scrollWidth, body.offsetWidth, elem.scrollWidth, elem.offsetWidth, elem.clientWidth),
+		as: Math.max(body.scrollHeight, body.offsetHeight, elem.scrollHeight, elem.offsetHeight, elem.clientHeight)
 	};
 }
 
@@ -4286,15 +4286,15 @@ function _Browser_getViewportOf(id)
 	return _Browser_withNode(id, function(node)
 	{
 		return {
-			aI: {
-				aN: node.scrollWidth,
-				aq: node.scrollHeight
+			aK: {
+				aP: node.scrollWidth,
+				as: node.scrollHeight
 			},
-			aM: {
-				aO: node.scrollLeft,
-				aP: node.scrollTop,
-				aN: node.clientWidth,
-				aq: node.clientHeight
+			aO: {
+				aQ: node.scrollLeft,
+				aR: node.scrollTop,
+				aP: node.clientWidth,
+				as: node.clientHeight
 			}
 		};
 	});
@@ -4324,18 +4324,18 @@ function _Browser_getElement(id)
 		var x = _Browser_window.pageXOffset;
 		var y = _Browser_window.pageYOffset;
 		return {
-			aI: _Browser_getScene(),
-			aM: {
-				aO: x,
-				aP: y,
-				aN: _Browser_doc.documentElement.clientWidth,
-				aq: _Browser_doc.documentElement.clientHeight
+			aK: _Browser_getScene(),
+			aO: {
+				aQ: x,
+				aR: y,
+				aP: _Browser_doc.documentElement.clientWidth,
+				as: _Browser_doc.documentElement.clientHeight
 			},
-			aY: {
-				aO: x + rect.left,
-				aP: y + rect.top,
-				aN: rect.width,
-				aq: rect.height
+			a_: {
+				aQ: x + rect.left,
+				aR: y + rect.top,
+				aP: rect.width,
+				as: rect.height
 			}
 		};
 	});
@@ -4870,7 +4870,7 @@ var $elm$core$Array$builderToArray = F2(
 			var treeLen = builder.a * $elm$core$Array$branchFactor;
 			var depth = $elm$core$Basics$floor(
 				A2($elm$core$Basics$logBase, $elm$core$Array$branchFactor, treeLen - 1));
-			var correctNodeList = reverseNodeList ? $elm$core$List$reverse(builder.d) : builder.d;
+			var correctNodeList = reverseNodeList ? $elm$core$List$reverse(builder.e) : builder.e;
 			var tree = A2($elm$core$Array$treeFromBuilder, correctNodeList, builder.a);
 			return A4(
 				$elm$core$Array$Array_elm_builtin,
@@ -4890,7 +4890,7 @@ var $elm$core$Array$initializeHelp = F5(
 				return A2(
 					$elm$core$Array$builderToArray,
 					false,
-					{d: nodeList, a: (len / $elm$core$Array$branchFactor) | 0, c: tail});
+					{e: nodeList, a: (len / $elm$core$Array$branchFactor) | 0, c: tail});
 			} else {
 				var leaf = $elm$core$Array$Leaf(
 					A3($elm$core$Elm$JsArray$initialize, $elm$core$Array$branchFactor, fromIndex, fn));
@@ -4958,7 +4958,7 @@ var $elm$url$Url$Http = 0;
 var $elm$url$Url$Https = 1;
 var $elm$url$Url$Url = F6(
 	function (protocol, host, port_, path, query, fragment) {
-		return {ap: fragment, ar: host, ax: path, aA: port_, aD: protocol, aE: query};
+		return {ar: fragment, at: host, az: path, aC: port_, aF: protocol, aG: query};
 	});
 var $elm$core$String$contains = _String_contains;
 var $elm$core$String$length = _String_length;
@@ -5240,15 +5240,20 @@ var $elm$browser$Browser$element = _Browser_element;
 var $elm$json$Json$Decode$index = _Json_decodeIndex;
 var $author$project$Main$NotHold = 1;
 var $author$project$Main$Stop = 1;
-var $author$project$Main$ballVX = 4.5;
+var $author$project$Main$figureBallVel = function (canvWidth) {
+	return (0.66 * canvWidth) / 60;
+};
 var $author$project$Main$ballStartState = function (_v0) {
 	var canvWidth = _v0.a;
 	var canvHeight = _v0.b;
+	var minVelocity = $author$project$Main$figureBallVel(canvWidth);
 	return {
+		V: 0.2,
 		N: 0,
 		y: _Utils_Tuple2(0.5 * canvWidth, 0.3 * canvHeight),
-		W: 0.015 * canvWidth,
-		p: $author$project$Main$ballVX
+		X: 0.015 * canvWidth,
+		Y: minVelocity,
+		p: minVelocity
 	};
 };
 var $author$project$Main$SetTreesPos = function (a) {
@@ -5448,9 +5453,9 @@ var $author$project$Main$loadNextLevel = function (m) {
 	var levelSize = m.C + 1500;
 	var l = levelSize;
 	var count = $elm$core$Basics$floor(0.015 * l);
-	var ball = $author$project$Main$ballStartState(m.e);
+	var ball = $author$project$Main$ballStartState(m.f);
 	var ballY = ball.y.b;
-	var _v0 = _Utils_Tuple2(m.e.a, m.e.b);
+	var _v0 = _Utils_Tuple2(m.f.a, m.f.b);
 	var w = _v0.a;
 	var h = _v0.b;
 	var pointGenerator = A2(
@@ -5460,7 +5465,7 @@ var $author$project$Main$loadNextLevel = function (m) {
 	return _Utils_Tuple2(
 		_Utils_update(
 			m,
-			{g: ball, O: 1, I: 1, J: m.J + 1, q: 0, C: levelSize, z: $author$project$Main$minSlipVel, l: _List_Nil, S: _List_Nil}),
+			{d: ball, O: 1, I: 1, J: m.J + 1, q: 0, C: levelSize, z: $author$project$Main$minSlipVel, l: _List_Nil, S: _List_Nil}),
 		A2(
 			$elm$random$Random$generate,
 			$author$project$Main$SetTreesPos,
@@ -5484,11 +5489,11 @@ var $author$project$Main$init = function (screenSize) {
 	var canvSize = $author$project$Main$toCanvSize(screenSize);
 	return $author$project$Main$loadNextLevel(
 		{
-			g: $author$project$Main$ballStartState(canvSize),
-			e: canvSize,
+			d: $author$project$Main$ballStartState(canvSize),
+			f: canvSize,
 			O: 1,
 			I: 1,
-			Z: isMobile,
+			aa: isMobile,
 			J: 0,
 			q: 0,
 			C: canvSize.b,
@@ -5508,7 +5513,7 @@ var $elm$browser$Browser$AnimationManager$Delta = function (a) {
 };
 var $elm$browser$Browser$AnimationManager$State = F3(
 	function (subs, request, oldTime) {
-		return {ab: oldTime, aG: request, aJ: subs};
+		return {ad: oldTime, aI: request, aL: subs};
 	});
 var $elm$browser$Browser$AnimationManager$init = $elm$core$Task$succeed(
 	A3($elm$browser$Browser$AnimationManager$State, _List_Nil, $elm$core$Maybe$Nothing, 0));
@@ -5519,8 +5524,8 @@ var $elm$core$Platform$sendToSelf = _Platform_sendToSelf;
 var $elm$core$Process$spawn = _Scheduler_spawn;
 var $elm$browser$Browser$AnimationManager$onEffects = F3(
 	function (router, subs, _v0) {
-		var request = _v0.aG;
-		var oldTime = _v0.ab;
+		var request = _v0.aI;
+		var oldTime = _v0.ad;
 		var _v1 = _Utils_Tuple2(request, subs);
 		if (_v1.a.$ === 1) {
 			if (!_v1.b.b) {
@@ -5566,8 +5571,8 @@ var $elm$browser$Browser$AnimationManager$onEffects = F3(
 	});
 var $elm$browser$Browser$AnimationManager$onSelfMsg = F3(
 	function (router, newTime, _v0) {
-		var subs = _v0.aJ;
-		var oldTime = _v0.ab;
+		var subs = _v0.aL;
+		var oldTime = _v0.ad;
 		var send = function (sub) {
 			if (!sub.$) {
 				var tagger = sub.a;
@@ -5643,7 +5648,6 @@ var $author$project$Main$subscriptions = function (m) {
 };
 var $author$project$Main$Hold = 0;
 var $author$project$Main$Play = 0;
-var $author$project$Main$ballAX = 0.2;
 var $elm$core$Basics$ge = _Utils_ge;
 var $elm$core$List$any = F2(
 	function (isOkay, list) {
@@ -5680,7 +5684,7 @@ var $elm$core$List$filter = F2(
 var $elm$core$Basics$pow = _Basics_pow;
 var $author$project$Main$isCollision = F3(
 	function (ball, treesPos, canvSize) {
-		var r = ball.W;
+		var r = ball.X;
 		var _v0 = canvSize;
 		var w = _v0.a;
 		var h = _v0.b;
@@ -5719,14 +5723,14 @@ var $author$project$Main$onFrame = function (m) {
 	return _Utils_update(
 		m,
 		{
-			g: function (ball) {
+			d: function (ball) {
 				return _Utils_update(
 					ball,
 					{
 						y: A3($author$project$Main$move, ball.p, 0, ball.y),
 						p: ball.p + ball.N
 					});
-			}(m.g),
+			}(m.d),
 			q: m.q - $elm$core$Basics$floor(m.z),
 			z: A2($elm$core$Basics$max, $author$project$Main$maxSlipVel, m.z + $author$project$Main$slipAcceleration),
 			l: A2(
@@ -5740,7 +5744,7 @@ var $author$project$Main$restartLevel = function (m) {
 		_Utils_update(
 			m,
 			{
-				g: $author$project$Main$ballStartState(m.e),
+				d: $author$project$Main$ballStartState(m.f),
 				I: 1,
 				q: 0,
 				z: $author$project$Main$minSlipVel,
@@ -5752,7 +5756,7 @@ var $author$project$Main$update = F2(
 	function (msg, m) {
 		switch (msg.$) {
 			case 0:
-				return A3($author$project$Main$isCollision, m.g, m.l, m.e) ? $author$project$Main$restartLevel(m) : ((_Utils_cmp(m.q, m.C) > -1) ? $author$project$Main$loadNextLevel(m) : _Utils_Tuple2(
+				return A3($author$project$Main$isCollision, m.d, m.l, m.f) ? $author$project$Main$restartLevel(m) : ((_Utils_cmp(m.q, m.C) > -1) ? $author$project$Main$loadNextLevel(m) : _Utils_Tuple2(
 					$author$project$Main$onFrame(m),
 					$elm$core$Platform$Cmd$none));
 			case 1:
@@ -5767,14 +5771,14 @@ var $author$project$Main$update = F2(
 					_Utils_update(
 						m,
 						{
-							g: function (ball) {
+							d: function (ball) {
 								return _Utils_update(
 									ball,
 									{
-										N: (ball.p > 0) ? (-$author$project$Main$ballAX) : $author$project$Main$ballAX,
+										N: (ball.p > 0) ? (-m.d.V) : m.d.V,
 										p: -ball.p
 									});
-							}(m.g),
+							}(m.d),
 							O: 0,
 							I: 0
 						}),
@@ -5784,14 +5788,14 @@ var $author$project$Main$update = F2(
 					_Utils_update(
 						m,
 						{
-							g: function (ball) {
+							d: function (ball) {
 								return _Utils_update(
 									ball,
 									{
 										N: 0,
-										p: (ball.p > 0) ? $author$project$Main$ballVX : (-$author$project$Main$ballVX)
+										p: (ball.p > 0) ? m.d.Y : (-m.d.Y)
 									});
-							}(m.g),
+							}(m.d),
 							O: 1
 						}),
 					$elm$core$Platform$Cmd$none);
@@ -5999,8 +6003,8 @@ var $joakin$elm_canvas$Canvas$shapes = F2(
 var $avh4$elm_color$Color$white = A4($avh4$elm_color$Color$RgbaSpace, 255 / 255, 255 / 255, 255 / 255, 1.0);
 var $elm$core$Basics$xor = _Basics_xor;
 var $author$project$Main$finishLine = function (m) {
-	var width = m.e.a;
-	var posY1 = (m.C - m.q) + m.g.y.b;
+	var width = m.f.a;
+	var posY1 = (m.C - m.q) + m.d.y.b;
 	var isEven = function (n) {
 		return !A2($elm$core$Basics$modBy, 2, n);
 	};
@@ -6102,7 +6106,7 @@ var $author$project$Main$paintBall = function (ball) {
 			]),
 		_List_fromArray(
 			[
-				A2($joakin$elm_canvas$Canvas$circle, ball.y, ball.W)
+				A2($joakin$elm_canvas$Canvas$circle, ball.y, ball.X)
 			]));
 };
 var $joakin$elm_canvas$Canvas$Settings$Text$Center = 2;
@@ -6169,8 +6173,8 @@ var $joakin$elm_canvas$Canvas$Internal$CustomElementJsonApi$font = function (f) 
 		$elm$json$Json$Encode$string(f));
 };
 var $joakin$elm_canvas$Canvas$Settings$Text$font = function (_v0) {
-	var size = _v0.bd;
-	var family = _v0.a$;
+	var size = _v0.bf;
+	var family = _v0.a1;
 	return $joakin$elm_canvas$Canvas$Internal$Canvas$SettingCommand(
 		$joakin$elm_canvas$Canvas$Internal$CustomElementJsonApi$font(
 			$elm$core$String$fromInt(size) + ('px ' + family)));
@@ -6192,11 +6196,11 @@ var $joakin$elm_canvas$Canvas$text = F3(
 				m: _List_Nil,
 				u: $joakin$elm_canvas$Canvas$Internal$Canvas$NotSpecified,
 				v: $joakin$elm_canvas$Canvas$Internal$Canvas$DrawableText(
-					{_: $elm$core$Maybe$Nothing, az: point, ah: str})
+					{ab: $elm$core$Maybe$Nothing, aB: point, aj: str})
 			});
 	});
 var $author$project$Main$statusBar = function (m) {
-	var width = m.e.a;
+	var width = m.f.a;
 	var print = F4(
 		function (_v3, fillColor, strokeColor, level) {
 			var x = _v3.a;
@@ -6206,7 +6210,7 @@ var $author$project$Main$statusBar = function (m) {
 				_List_fromArray(
 					[
 						$joakin$elm_canvas$Canvas$Settings$Text$font(
-						{a$: 'Arial', bd: 16}),
+						{a1: 'Arial', bf: 16}),
 						$joakin$elm_canvas$Canvas$Settings$Text$align(2),
 						$joakin$elm_canvas$Canvas$Settings$fill(fillColor),
 						$joakin$elm_canvas$Canvas$Settings$stroke(strokeColor)
@@ -6216,7 +6220,7 @@ var $author$project$Main$statusBar = function (m) {
 		});
 	var p = m.q;
 	var l = m.C;
-	var height = m.e.b;
+	var height = m.f.b;
 	var r = 0.025 * height;
 	var h = $elm$core$Basics$sqrt(
 		A2($elm$core$Basics$pow, r, 2) + A2($elm$core$Basics$pow, r, 2));
@@ -6777,7 +6781,7 @@ var $joakin$elm_canvas$Canvas$renderTextFill = F5(
 	function (txt, x, y, maybeColor, cmds) {
 		return A2(
 			$elm$core$List$cons,
-			A4($joakin$elm_canvas$Canvas$Internal$CustomElementJsonApi$fillText, txt.ah, x, y, txt._),
+			A4($joakin$elm_canvas$Canvas$Internal$CustomElementJsonApi$fillText, txt.aj, x, y, txt.ab),
 			function () {
 				if (!maybeColor.$) {
 					var color = maybeColor.a;
@@ -6820,7 +6824,7 @@ var $joakin$elm_canvas$Canvas$renderTextStroke = F5(
 	function (txt, x, y, maybeColor, cmds) {
 		return A2(
 			$elm$core$List$cons,
-			A4($joakin$elm_canvas$Canvas$Internal$CustomElementJsonApi$strokeText, txt.ah, x, y, txt._),
+			A4($joakin$elm_canvas$Canvas$Internal$CustomElementJsonApi$strokeText, txt.aj, x, y, txt.ab),
 			function () {
 				if (!maybeColor.$) {
 					var color = maybeColor.a;
@@ -6835,7 +6839,7 @@ var $joakin$elm_canvas$Canvas$renderTextStroke = F5(
 	});
 var $joakin$elm_canvas$Canvas$renderTextDrawOp = F3(
 	function (drawOp, txt, cmds) {
-		var _v0 = txt.az;
+		var _v0 = txt.aB;
 		var x = _v0.a;
 		var y = _v0.b;
 		switch (drawOp.$) {
@@ -6912,11 +6916,11 @@ var $joakin$elm_canvas$Canvas$Internal$Texture$drawTexture = F4(
 			function () {
 				if (!t.$) {
 					var image = t.a;
-					return A9($joakin$elm_canvas$Canvas$Internal$CustomElementJsonApi$drawImage, 0, 0, image.aN, image.aq, x, y, image.aN, image.aq, image.V);
+					return A9($joakin$elm_canvas$Canvas$Internal$CustomElementJsonApi$drawImage, 0, 0, image.aP, image.as, x, y, image.aP, image.as, image.W);
 				} else {
 					var sprite = t.a;
 					var image = t.b;
-					return A9($joakin$elm_canvas$Canvas$Internal$CustomElementJsonApi$drawImage, sprite.aO, sprite.aP, sprite.aN, sprite.aq, x, y, sprite.aN, sprite.aq, image.V);
+					return A9($joakin$elm_canvas$Canvas$Internal$CustomElementJsonApi$drawImage, sprite.aQ, sprite.aR, sprite.aP, sprite.as, x, y, sprite.aP, sprite.as, image.W);
 				}
 			}(),
 			cmds);
@@ -7043,7 +7047,7 @@ var $joakin$elm_canvas$Canvas$Internal$Texture$decodeTextureImage = A2(
 				function (tagName, width, height) {
 					return (tagName === 'IMG') ? $elm$core$Maybe$Just(
 						$joakin$elm_canvas$Canvas$Internal$Texture$TImage(
-							{aq: height, V: image, aN: width})) : $elm$core$Maybe$Nothing;
+							{as: height, W: image, aP: width})) : $elm$core$Maybe$Nothing;
 				}),
 			A2($elm$json$Json$Decode$field, 'tagName', $elm$json$Json$Decode$string),
 			A2($elm$json$Json$Decode$field, 'width', $elm$json$Json$Decode$float),
@@ -7106,15 +7110,15 @@ var $joakin$elm_canvas$Canvas$toHtmlWith = F3(
 					$joakin$elm_canvas$Canvas$render(entities)),
 				A2(
 					$elm$core$List$cons,
-					$elm$html$Html$Attributes$height(options.aq),
+					$elm$html$Html$Attributes$height(options.as),
 					A2(
 						$elm$core$List$cons,
-						$elm$html$Html$Attributes$width(options.aN),
+						$elm$html$Html$Attributes$width(options.aP),
 						attrs))),
 			A2(
 				$elm$core$List$cons,
 				_Utils_Tuple2('__canvas', $joakin$elm_canvas$Canvas$cnvs),
-				A2($elm$core$List$map, $joakin$elm_canvas$Canvas$renderTextureSource, options.aL)));
+				A2($elm$core$List$map, $joakin$elm_canvas$Canvas$renderTextureSource, options.aN)));
 	});
 var $joakin$elm_canvas$Canvas$toHtml = F3(
 	function (_v0, attrs, entities) {
@@ -7122,7 +7126,7 @@ var $joakin$elm_canvas$Canvas$toHtml = F3(
 		var h = _v0.b;
 		return A3(
 			$joakin$elm_canvas$Canvas$toHtmlWith,
-			{aq: h, aL: _List_Nil, aN: w},
+			{as: h, aN: _List_Nil, aP: w},
 			attrs,
 			entities);
 	});
@@ -7141,9 +7145,9 @@ var $joakin$elm_canvas$Canvas$path = F2(
 		return A2($joakin$elm_canvas$Canvas$Internal$Canvas$Path, startingPoint, segments);
 	});
 var $author$project$Main$trees = function (m) {
-	var width = m.e.a;
+	var width = m.f.a;
 	var postW = 0.01 * width;
-	var height = m.e.b;
+	var height = m.f.b;
 	var postH = 0.01 * height;
 	var posts = A2(
 		$joakin$elm_canvas$Canvas$shapes,
@@ -7229,10 +7233,10 @@ var $author$project$Main$view = function (m) {
 		_List_Nil,
 		_List_fromArray(
 			[
-				$author$project$Main$checkCanvSize(m.e) ? A3(
+				$author$project$Main$checkCanvSize(m.f) ? A3(
 				$joakin$elm_canvas$Canvas$toHtml,
-				m.e,
-				m.Z ? _List_fromArray(
+				m.f,
+				m.aa ? _List_fromArray(
 					[
 						A2(
 						$elm$html$Html$Events$on,
@@ -7255,9 +7259,9 @@ var $author$project$Main$view = function (m) {
 					]),
 				_List_fromArray(
 					[
-						$author$project$Main$clear(m.e),
+						$author$project$Main$clear(m.f),
 						$author$project$Main$finishLine(m),
-						$author$project$Main$paintBall(m.g),
+						$author$project$Main$paintBall(m.d),
 						$author$project$Main$trees(m),
 						$author$project$Main$statusBar(m)
 					])) : A2(
@@ -7294,7 +7298,7 @@ var $author$project$Main$view = function (m) {
 			]));
 };
 var $author$project$Main$main = $elm$browser$Browser$element(
-	{a3: $author$project$Main$init, bf: $author$project$Main$subscriptions, bh: $author$project$Main$update, bi: $author$project$Main$view});
+	{a5: $author$project$Main$init, bh: $author$project$Main$subscriptions, bj: $author$project$Main$update, bk: $author$project$Main$view});
 _Platform_export({'Main':{'init':$author$project$Main$main(
 	A2(
 		$elm$json$Json$Decode$andThen,

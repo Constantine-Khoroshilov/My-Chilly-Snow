@@ -70,24 +70,37 @@ type GameState
 type alias Ball =
   { pos : Point
   , radius : Float
+  -- v is const of the game ball min velocity
+  -- It is figured out with the canvas width when the app starts
+  -- It is the scalar (velocity module)
+  , v : Float
+  , a : Float
   -- The velocity vec
   , vx : Float
   -- The acceleration vec 
   , ax : Float
   }
 
-ballVX = 4.5
-ballAX = 0.2
+--ballVX = 4.5
+--ballAX = 0.2
 
 ballStartState (canvWidth, canvHeight) =
-  { pos = 
-      ( toFloat canvWidth |> (*) 0.5
-      , toFloat canvHeight |> (*) 0.3
-      )
-  , radius = toFloat canvWidth |> (*) 0.015
-  , vx = ballVX
-  , ax = 0
-  }
+  let
+    minVelocity = figureBallVel canvWidth
+  in
+    { pos = 
+        ( toFloat canvWidth |> (*) 0.5
+        , toFloat canvHeight |> (*) 0.3
+        )
+    , radius = toFloat canvWidth |> (*) 0.015
+    , v = minVelocity
+    , a = 0.2
+    , vx = minVelocity 
+    , ax = 0
+    }
+
+figureBallVel canvWidth =
+  0.66 * (toFloat canvWidth) / 60
 
 -- max or min by module
 
@@ -184,8 +197,8 @@ update msg m =
                         | vx = -ball.vx
                         , ax =
                             -- Set the ball acceleration
-                            if ball.vx > 0 then -ballAX
-                            else ballAX
+                            if ball.vx > 0 then -m.ball.a
+                            else m.ball.a
                       }
         }
       , Cmd.none
@@ -202,8 +215,8 @@ update msg m =
                         | ax = 0
                         , vx =
                             -- Reset the ball speed
-                            if ball.vx > 0 then ballVX
-                            else -ballVX
+                            if ball.vx > 0 then m.ball.v
+                            else -m.ball.v
                       } 
         }
       , Cmd.none
