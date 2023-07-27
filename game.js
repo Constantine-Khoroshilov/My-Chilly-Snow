@@ -5245,7 +5245,7 @@ var $author$project$Main$ballStartState = function (_v0) {
 	var canvWidth = _v0.a;
 	var canvHeight = _v0.b;
 	return {
-		N: 0,
+		O: 0,
 		y: _Utils_Tuple2(0.5 * canvWidth, 0.3 * canvHeight),
 		W: 0.015 * canvWidth,
 		p: $author$project$Main$ballVX
@@ -5460,7 +5460,7 @@ var $author$project$Main$loadNextLevel = function (m) {
 	return _Utils_Tuple2(
 		_Utils_update(
 			m,
-			{g: ball, O: 1, I: 1, J: m.J + 1, q: 0, C: levelSize, z: $author$project$Main$minSlipVel, l: _List_Nil, S: _List_Nil}),
+			{g: ball, H: 1, J: 1, K: m.K + 1, q: 0, C: levelSize, z: $author$project$Main$minSlipVel, l: _List_Nil, S: _List_Nil}),
 		A2(
 			$elm$random$Random$generate,
 			$author$project$Main$SetTreesPos,
@@ -5486,10 +5486,10 @@ var $author$project$Main$init = function (screenSize) {
 		{
 			g: $author$project$Main$ballStartState(canvSize),
 			e: canvSize,
-			O: 1,
-			I: 1,
+			H: 1,
+			J: 1,
 			Z: isMobile,
-			J: 0,
+			K: 0,
 			q: 0,
 			C: canvSize.b,
 			z: $author$project$Main$minSlipVel,
@@ -5634,7 +5634,7 @@ var $elm$browser$Browser$AnimationManager$onAnimationFrameDelta = function (tagg
 };
 var $elm$browser$Browser$Events$onAnimationFrameDelta = $elm$browser$Browser$AnimationManager$onAnimationFrameDelta;
 var $author$project$Main$subscriptions = function (m) {
-	var _v0 = m.I;
+	var _v0 = m.J;
 	if (!_v0) {
 		return $elm$browser$Browser$Events$onAnimationFrameDelta($author$project$Main$Frame);
 	} else {
@@ -5724,7 +5724,7 @@ var $author$project$Main$onFrame = function (m) {
 					ball,
 					{
 						y: A3($author$project$Main$move, ball.p, 0, ball.y),
-						p: ball.p + ball.N
+						p: ball.p + ball.O
 					});
 			}(m.g),
 			q: m.q - $elm$core$Basics$floor(m.z),
@@ -5741,7 +5741,7 @@ var $author$project$Main$restartLevel = function (m) {
 			m,
 			{
 				g: $author$project$Main$ballStartState(m.e),
-				I: 1,
+				J: 1,
 				q: 0,
 				z: $author$project$Main$minSlipVel,
 				l: m.S
@@ -5771,12 +5771,12 @@ var $author$project$Main$update = F2(
 								return _Utils_update(
 									ball,
 									{
-										N: (ball.p > 0) ? (-$author$project$Main$ballAX) : $author$project$Main$ballAX,
+										O: (ball.p > 0) ? (-$author$project$Main$ballAX) : $author$project$Main$ballAX,
 										p: -ball.p
 									});
 							}(m.g),
-							O: 0,
-							I: 0
+							H: 0,
+							J: 0
 						}),
 					$elm$core$Platform$Cmd$none);
 			default:
@@ -5788,11 +5788,11 @@ var $author$project$Main$update = F2(
 								return _Utils_update(
 									ball,
 									{
-										N: 0,
+										O: 0,
 										p: (ball.p > 0) ? $author$project$Main$ballVX : (-$author$project$Main$ballVX)
 									});
 							}(m.g),
-							O: 1
+							H: 1
 						}),
 					$elm$core$Platform$Cmd$none);
 		}
@@ -6299,13 +6299,13 @@ var $author$project$Main$statusBar = function (m) {
 				_Utils_Tuple2(x1, y1),
 				$avh4$elm_color$Color$white,
 				$avh4$elm_color$Color$white,
-				m.J),
+				m.K),
 				A4(
 				print,
 				_Utils_Tuple2(x2, y2),
 				color,
 				color,
-				m.J + 1)
+				m.K + 1)
 			]));
 };
 var $elm$virtual_dom$VirtualDom$style = _VirtualDom_style;
@@ -7228,14 +7228,20 @@ var $author$project$Main$view = function (m) {
 		$elm$html$Html$main_,
 		m.Z ? _List_fromArray(
 			[
-				A2(
-				$elm$html$Html$Events$on,
-				'touchstart',
-				$elm$json$Json$Decode$succeed($author$project$Main$ClickDown)),
-				A2(
-				$elm$html$Html$Events$on,
-				'touchcancel',
-				$elm$json$Json$Decode$succeed($author$project$Main$ClickUp))
+				function () {
+				var _v0 = m.H;
+				if (!_v0) {
+					return A2(
+						$elm$html$Html$Events$on,
+						'onclick',
+						$elm$json$Json$Decode$succeed($author$project$Main$ClickUp));
+				} else {
+					return A2(
+						$elm$html$Html$Events$on,
+						'onclick',
+						$elm$json$Json$Decode$succeed($author$project$Main$ClickDown));
+				}
+			}()
 			]) : _List_fromArray(
 			[
 				A2(

@@ -332,8 +332,11 @@ view m =
   Html.main_ 
     ( if m.isMobile
         then
-          [ on "touchstart" (Decode.succeed ClickDown)
-          , on "touchcancel" (Decode.succeed ClickUp)
+          [ case m.clickState of
+              Hold ->
+                on "onclick" (Decode.succeed ClickUp)
+              NotHold ->
+                on "onclick" (Decode.succeed ClickDown)
           ]
         else
           [ on "mousedown" (Decode.succeed ClickDown)
