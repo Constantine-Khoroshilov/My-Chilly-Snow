@@ -336,7 +336,7 @@ view m =
           ( if m.isMobile
             then
               [ on "touchstart" (Decode.succeed ClickDown)
-              , on "touchend" (Decode.succeed ClickUp)
+              , on "touchcancel" (Decode.succeed ClickUp)
               ]
             else
               [ on "mousedown" (Decode.succeed ClickDown)
