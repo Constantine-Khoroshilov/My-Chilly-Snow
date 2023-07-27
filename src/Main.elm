@@ -329,20 +329,21 @@ subscriptions m =
 
 view : Model -> Html Msg
 view m =
-  Html.main_ []
+  Html.main_ 
+    ( if m.isMobile
+        then
+          [ on "touchstart" (Decode.succeed ClickDown)
+          , on "touchcancel" (Decode.succeed ClickUp)
+          ]
+        else
+          [ on "mousedown" (Decode.succeed ClickDown)
+          , on "mouseup" (Decode.succeed ClickUp)   
+          ]
+    )
     [ if checkCanvSize m.canvSize
       then
         Canvas.toHtml m.canvSize
-          ( if m.isMobile
-            then
-              [ on "touchstart" (Decode.succeed ClickDown)
-              , on "touchcancel" (Decode.succeed ClickUp)
-              ]
-            else
-              [ on "mousedown" (Decode.succeed ClickDown)
-              , on "mouseup" (Decode.succeed ClickUp)   
-              ]
-          )
+          []
           [ clear m.canvSize
           , finishLine m
           , paintBall m.ball

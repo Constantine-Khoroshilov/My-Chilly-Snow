@@ -7226,33 +7226,33 @@ var $author$project$Main$trees = function (m) {
 var $author$project$Main$view = function (m) {
 	return A2(
 		$elm$html$Html$main_,
-		_List_Nil,
+		m.Z ? _List_fromArray(
+			[
+				A2(
+				$elm$html$Html$Events$on,
+				'touchstart',
+				$elm$json$Json$Decode$succeed($author$project$Main$ClickDown)),
+				A2(
+				$elm$html$Html$Events$on,
+				'touchcancel',
+				$elm$json$Json$Decode$succeed($author$project$Main$ClickUp))
+			]) : _List_fromArray(
+			[
+				A2(
+				$elm$html$Html$Events$on,
+				'mousedown',
+				$elm$json$Json$Decode$succeed($author$project$Main$ClickDown)),
+				A2(
+				$elm$html$Html$Events$on,
+				'mouseup',
+				$elm$json$Json$Decode$succeed($author$project$Main$ClickUp))
+			]),
 		_List_fromArray(
 			[
 				$author$project$Main$checkCanvSize(m.e) ? A3(
 				$joakin$elm_canvas$Canvas$toHtml,
 				m.e,
-				m.Z ? _List_fromArray(
-					[
-						A2(
-						$elm$html$Html$Events$on,
-						'touchstart',
-						$elm$json$Json$Decode$succeed($author$project$Main$ClickDown)),
-						A2(
-						$elm$html$Html$Events$on,
-						'touchcancel',
-						$elm$json$Json$Decode$succeed($author$project$Main$ClickUp))
-					]) : _List_fromArray(
-					[
-						A2(
-						$elm$html$Html$Events$on,
-						'mousedown',
-						$elm$json$Json$Decode$succeed($author$project$Main$ClickDown)),
-						A2(
-						$elm$html$Html$Events$on,
-						'mouseup',
-						$elm$json$Json$Decode$succeed($author$project$Main$ClickUp))
-					]),
+				_List_Nil,
 				_List_fromArray(
 					[
 						$author$project$Main$clear(m.e),
