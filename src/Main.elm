@@ -94,14 +94,14 @@ ballStartState (canvWidth, canvHeight) =
         )
     , radius = toFloat canvWidth |> (*) 0.015
     , v = minVelocity
-    , a = 0.2
+    , a = 0
     , vx = minVelocity 
     , ax = 0
     }
 
-figureBallVel canvWidth =
-  (0.3 * (toFloat canvWidth) / 60)
-    |> Debug.log "Velocity"
+figureBallVel canvWidth = 0.1
+  --(0.3 * (toFloat canvWidth) / 60)
+  --  |> Debug.log "Velocity"
 
 -- max or min by module
 

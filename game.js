@@ -5246,16 +5246,15 @@ var $elm$browser$Browser$element = _Browser_element;
 var $elm$json$Json$Decode$index = _Json_decodeIndex;
 var $author$project$Main$NotHold = {$: 'NotHold'};
 var $author$project$Main$Stop = {$: 'Stop'};
-var $elm$core$Debug$log = _Debug_log;
 var $author$project$Main$figureBallVel = function (canvWidth) {
-	return A2($elm$core$Debug$log, 'Velocity', (0.66 * canvWidth) / 60);
+	return 0.1;
 };
 var $author$project$Main$ballStartState = function (_v0) {
 	var canvWidth = _v0.a;
 	var canvHeight = _v0.b;
 	var minVelocity = $author$project$Main$figureBallVel(canvWidth);
 	return {
-		a: 0.2,
+		a: 0,
 		ax: 0,
 		pos: _Utils_Tuple2(0.5 * canvWidth, 0.3 * canvHeight),
 		radius: 0.015 * canvWidth,
