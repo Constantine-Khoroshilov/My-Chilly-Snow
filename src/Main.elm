@@ -24,7 +24,8 @@ import Tuple exposing (first, second)
 
 
 type alias Model =
-  { canvSize : (Int, Int)
+  { delta : Float
+  , canvSize : (Int, Int)
   , isMobile : Bool
   , clickState : ClickState
   , gameState : GameState
@@ -107,7 +108,8 @@ init screenSize =
     isMobile = (first screenSize) <= (second screenSize)
   in
     loadNextLevel
-      { canvSize = canvSize
+      { delta = 0
+      , canvSize = canvSize
       , isMobile = isMobile
       , clickState = NotHold
       , gameState = Stop
@@ -148,7 +150,7 @@ type Msg
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg m =
   case msg of
-    Frame _ ->
+    Frame delta ->
       if isCollision m.ball m.treesPos m.canvSize 
       then
         restartLevel m
@@ -158,7 +160,7 @@ update msg m =
         loadNextLevel m
 
       else
-        ( onFrame m
+        ( onFrame delta m
         , Cmd.none
         )
 
@@ -210,10 +212,11 @@ update msg m =
       )
 
 
-onFrame : Model -> Model
-onFrame m =
+onFrame : Float -> Model -> Model
+onFrame delta m =
   { m
-    | levelPassed = m.levelPassed - (floor m.slipVelocity)
+    | delta = delta
+    , levelPassed = m.levelPassed - (floor m.slipVelocity)
     , slipVelocity = max maxSlipVel (m.slipVelocity + slipAcceleration)
     , ball =
         m.ball
@@ -330,7 +333,8 @@ subscriptions m =
 view : Model -> Html Msg
 view m =
   Html.main_ []
-    [ if checkCanvSize m.canvSize
+    [ m.delta |> String.fromFloat |> text
+    , if checkCanvSize m.canvSize
       then
         Canvas.toHtml m.canvSize
           ( if m.isMobile

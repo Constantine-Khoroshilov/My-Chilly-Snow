@@ -5505,6 +5505,7 @@ var $author$project$Main$init = function (screenSize) {
 			ball: $author$project$Main$ballStartState(canvSize),
 			canvSize: canvSize,
 			clickState: $author$project$Main$NotHold,
+			delta: 0,
 			gameState: $author$project$Main$Stop,
 			isMobile: isMobile,
 			level: 0,
@@ -5733,26 +5734,28 @@ var $author$project$Main$move = F3(
 		return _Utils_Tuple2(x + dx, y + dy);
 	});
 var $author$project$Main$slipAcceleration = -0.005;
-var $author$project$Main$onFrame = function (m) {
-	return _Utils_update(
-		m,
-		{
-			ball: function (ball) {
-				return _Utils_update(
-					ball,
-					{
-						pos: A3($author$project$Main$move, ball.vx, 0, ball.pos),
-						vx: ball.vx + ball.ax
-					});
-			}(m.ball),
-			levelPassed: m.levelPassed - $elm$core$Basics$floor(m.slipVelocity),
-			slipVelocity: A2($elm$core$Basics$max, $author$project$Main$maxSlipVel, m.slipVelocity + $author$project$Main$slipAcceleration),
-			treesPos: A2(
-				$elm$core$List$map,
-				A2($author$project$Main$move, 0, m.slipVelocity),
-				m.treesPos)
-		});
-};
+var $author$project$Main$onFrame = F2(
+	function (delta, m) {
+		return _Utils_update(
+			m,
+			{
+				ball: function (ball) {
+					return _Utils_update(
+						ball,
+						{
+							pos: A3($author$project$Main$move, ball.vx, 0, ball.pos),
+							vx: ball.vx + ball.ax
+						});
+				}(m.ball),
+				delta: delta,
+				levelPassed: m.levelPassed - $elm$core$Basics$floor(m.slipVelocity),
+				slipVelocity: A2($elm$core$Basics$max, $author$project$Main$maxSlipVel, m.slipVelocity + $author$project$Main$slipAcceleration),
+				treesPos: A2(
+					$elm$core$List$map,
+					A2($author$project$Main$move, 0, m.slipVelocity),
+					m.treesPos)
+			});
+	});
 var $author$project$Main$restartLevel = function (m) {
 	return _Utils_Tuple2(
 		_Utils_update(
@@ -5770,8 +5773,9 @@ var $author$project$Main$update = F2(
 	function (msg, m) {
 		switch (msg.$) {
 			case 'Frame':
+				var delta = msg.a;
 				return A3($author$project$Main$isCollision, m.ball, m.treesPos, m.canvSize) ? $author$project$Main$restartLevel(m) : ((_Utils_cmp(m.levelPassed, m.levelSize) > -1) ? $author$project$Main$loadNextLevel(m) : _Utils_Tuple2(
-					$author$project$Main$onFrame(m),
+					A2($author$project$Main$onFrame, delta, m),
 					$elm$core$Platform$Cmd$none));
 			case 'SetTreesPos':
 				var pos = msg.a;
@@ -6084,6 +6088,7 @@ var $author$project$Main$finishLine = function (m) {
 			A2(cellLine, posY1, true),
 			A2(cellLine, posY2, false)));
 };
+var $elm$core$String$fromFloat = _String_fromNumber;
 var $elm$html$Html$h1 = _VirtualDom_node('h1');
 var $elm$html$Html$main_ = _VirtualDom_node('main');
 var $elm$virtual_dom$VirtualDom$Normal = function (a) {
@@ -6396,7 +6401,6 @@ var $joakin$elm_canvas$Canvas$Internal$CustomElementJsonApi$beginPath = A2($joak
 var $elm$core$String$concat = function (strings) {
 	return A2($elm$core$String$join, '', strings);
 };
-var $elm$core$String$fromFloat = _String_fromNumber;
 var $elm$core$Basics$round = _Basics_round;
 var $avh4$elm_color$Color$toCssString = function (_v0) {
 	var r = _v0.a;
@@ -7256,6 +7260,8 @@ var $author$project$Main$view = function (m) {
 		_List_Nil,
 		_List_fromArray(
 			[
+				$elm$html$Html$text(
+				$elm$core$String$fromFloat(m.delta)),
 				$author$project$Main$checkCanvSize(m.canvSize) ? A3(
 				$joakin$elm_canvas$Canvas$toHtml,
 				m.canvSize,
