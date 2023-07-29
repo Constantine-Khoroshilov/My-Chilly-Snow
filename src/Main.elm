@@ -1,8 +1,8 @@
 module Main exposing (main)
 
 import Browser
-import Browser.Events exposing (onAnimationFrame)
-import Time exposing (Posix, posixToMillis, millisToPosix)
+import Browser.Events exposing (onAnimationFrameDelta)
+--import Time exposing (Posix, posixToMillis, millisToPosix)
 
 import Html exposing (Html, text)
 import Html.Attributes exposing (style)
@@ -26,10 +26,6 @@ import Tuple exposing (first, second)
 
 type alias Model =
   { canvSize : (Int, Int)
-  -- This is the POSIX time (time passed since 1 Jan 1970)
-  -- It is needed for FPS stabilization
-  -- FPS must not be very different on mobile and desktop versions
-  , posix : Posix
   , isMobile : Bool
   , clickState : ClickState
   , gameState : GameState
@@ -113,7 +109,6 @@ init screenSize =
   in
     loadNextLevel
       { canvSize = canvSize
-      , posix = millisToPosix 0
       , isMobile = isMobile
       , clickState = NotHold
       , gameState = Stop
@@ -145,7 +140,7 @@ toCanvSize (screenWidth, screenHeight) =
 type Msg
   -- It is msg that is called 60 times per sec
   -- for repaint (update) the canvas
-  = Frame Posix
+  = Frame Float
   | SetTreesPos (List Point)
   | ClickDown
   | ClickUp
@@ -154,7 +149,7 @@ type Msg
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg m =
   case msg of
-    Frame new_posix ->
+    Frame delta ->
       if isCollision m.ball m.treesPos m.canvSize 
       then
         restartLevel m
@@ -164,12 +159,7 @@ update msg m =
         loadNextLevel m
 
       else
-        ( -- FPS stabilization
-          if (posixToMillis new_posix) - (posixToMillis m.posix) >= 10
-          then
-            onFrame new_posix m
-          else
-            m
+        ( onFrame delta m
         , Cmd.none
         )
 
@@ -221,23 +211,29 @@ update msg m =
       )
 
 
-onFrame : Posix -> Model -> Model
-onFrame posix m =
-  { m
-    | posix = posix
-    , levelPassed = m.levelPassed - (floor m.slipVelocity)
-    , slipVelocity = max maxSlipVel (m.slipVelocity + slipAcceleration)
-    , ball =
-        m.ball
-          |> \ball -> 
-                { ball 
-                  | pos = move ball.vx 0 ball.pos
-                  -- Increase speed by acceleration
-                  , vx = ball.vx + ball.ax 
-                }
-    , treesPos =
-        List.map (move 0 m.slipVelocity) m.treesPos
-  }
+onFrame : Float -> Model -> Model
+onFrame delta m =
+  let
+    -- k is needed for FPS and velocity vectors sync  
+    -- because FPS on different devices (mobile or desktop) is different 
+    -- The smaller delta (difference between previous and current frame) 
+    -- the smaller k so velocity vectors have to decrease too
+    k = delta / 16
+  in
+    { m
+      | levelPassed = m.levelPassed - (floor m.slipVelocity)
+      , slipVelocity = max maxSlipVel (m.slipVelocity + (k * slipAcceleration))
+      , ball =
+          m.ball
+            |> \ball -> 
+                  { ball 
+                    | pos = move ball.vx 0 ball.pos
+                    -- Increase speed by acceleration
+                    , vx = ball.vx + (k * ball.ax)
+                  }
+      , treesPos =
+          List.map (move 0 m.slipVelocity) m.treesPos
+    }
 
 
 move : Float -> Float -> Point -> Point
@@ -328,7 +324,7 @@ subscriptions : Model -> Sub Msg
 subscriptions m =
   case m.gameState of
     Play ->
-      onAnimationFrame Frame
+      onAnimationFrameDelta Frame
 
     Stop -> 
       Sub.none
