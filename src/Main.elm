@@ -77,7 +77,6 @@ type alias Ball =
   , ax : Float
   }
 
-ballVX = 4.5
 ballAX = 0.2
 
 ballStartState (canvWidth, canvHeight) =
@@ -86,9 +85,12 @@ ballStartState (canvWidth, canvHeight) =
       , toFloat canvHeight |> (*) 0.3
       )
   , radius = toFloat canvWidth |> (*) 0.015
-  , vx = ballVX
+  , vx = figureBallVel canvWidth
   , ax = 0
   }
+
+figureBallVel canvWidth =
+  0.66 * (toFloat canvWidth) / 60
 
 -- max or min by module
 
@@ -203,8 +205,8 @@ update msg m =
                         | ax = 0
                         , vx =
                             -- Reset the ball speed
-                            if ball.vx > 0 then ballVX
-                            else -ballVX
+                            if ball.vx > 0 then figureBallVel (first m.canvSize)
+                            else figureBallVel (first m.canvSize) |> (*) -1
                       } 
         }
       , Cmd.none
