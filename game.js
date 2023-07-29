@@ -5505,12 +5505,12 @@ var $author$project$Main$init = function (screenSize) {
 			ball: $author$project$Main$ballStartState(canvSize),
 			canvSize: canvSize,
 			clickState: $author$project$Main$NotHold,
-			delta: 0,
 			gameState: $author$project$Main$Stop,
 			isMobile: isMobile,
 			level: 0,
 			levelPassed: 0,
 			levelSize: canvSize.b,
+			posix: $elm$time$Time$millisToPosix(0),
 			slipVelocity: $author$project$Main$minSlipVel,
 			treesPos: _List_Nil,
 			treesStartPos: _List_Nil
@@ -5522,8 +5522,8 @@ var $author$project$Main$Frame = function (a) {
 };
 var $elm$core$Platform$Sub$batch = _Platform_batch;
 var $elm$core$Platform$Sub$none = $elm$core$Platform$Sub$batch(_List_Nil);
-var $elm$browser$Browser$AnimationManager$Delta = function (a) {
-	return {$: 'Delta', a: a};
+var $elm$browser$Browser$AnimationManager$Time = function (a) {
+	return {$: 'Time', a: a};
 };
 var $elm$browser$Browser$AnimationManager$State = F3(
 	function (subs, request, oldTime) {
@@ -5625,8 +5625,8 @@ var $elm$browser$Browser$AnimationManager$onSelfMsg = F3(
 					$elm$core$Platform$sendToSelf(router),
 					$elm$browser$Browser$AnimationManager$rAF)));
 	});
-var $elm$browser$Browser$AnimationManager$Time = function (a) {
-	return {$: 'Time', a: a};
+var $elm$browser$Browser$AnimationManager$Delta = function (a) {
+	return {$: 'Delta', a: a};
 };
 var $elm$core$Basics$composeL = F3(
 	function (g, f, x) {
@@ -5647,15 +5647,15 @@ var $elm$browser$Browser$AnimationManager$subMap = F2(
 	});
 _Platform_effectManagers['Browser.AnimationManager'] = _Platform_createManager($elm$browser$Browser$AnimationManager$init, $elm$browser$Browser$AnimationManager$onEffects, $elm$browser$Browser$AnimationManager$onSelfMsg, 0, $elm$browser$Browser$AnimationManager$subMap);
 var $elm$browser$Browser$AnimationManager$subscription = _Platform_leaf('Browser.AnimationManager');
-var $elm$browser$Browser$AnimationManager$onAnimationFrameDelta = function (tagger) {
+var $elm$browser$Browser$AnimationManager$onAnimationFrame = function (tagger) {
 	return $elm$browser$Browser$AnimationManager$subscription(
-		$elm$browser$Browser$AnimationManager$Delta(tagger));
+		$elm$browser$Browser$AnimationManager$Time(tagger));
 };
-var $elm$browser$Browser$Events$onAnimationFrameDelta = $elm$browser$Browser$AnimationManager$onAnimationFrameDelta;
+var $elm$browser$Browser$Events$onAnimationFrame = $elm$browser$Browser$AnimationManager$onAnimationFrame;
 var $author$project$Main$subscriptions = function (m) {
 	var _v0 = m.gameState;
 	if (_v0.$ === 'Play') {
-		return $elm$browser$Browser$Events$onAnimationFrameDelta($author$project$Main$Frame);
+		return $elm$browser$Browser$Events$onAnimationFrame($author$project$Main$Frame);
 	} else {
 		return $elm$core$Platform$Sub$none;
 	}
@@ -5735,7 +5735,7 @@ var $author$project$Main$move = F3(
 	});
 var $author$project$Main$slipAcceleration = -0.005;
 var $author$project$Main$onFrame = F2(
-	function (delta, m) {
+	function (posix, m) {
 		return _Utils_update(
 			m,
 			{
@@ -5747,8 +5747,8 @@ var $author$project$Main$onFrame = F2(
 							vx: ball.vx + ball.ax
 						});
 				}(m.ball),
-				delta: delta,
 				levelPassed: m.levelPassed - $elm$core$Basics$floor(m.slipVelocity),
+				posix: posix,
 				slipVelocity: A2($elm$core$Basics$max, $author$project$Main$maxSlipVel, m.slipVelocity + $author$project$Main$slipAcceleration),
 				treesPos: A2(
 					$elm$core$List$map,
@@ -5773,9 +5773,9 @@ var $author$project$Main$update = F2(
 	function (msg, m) {
 		switch (msg.$) {
 			case 'Frame':
-				var delta = msg.a;
+				var new_posix = msg.a;
 				return A3($author$project$Main$isCollision, m.ball, m.treesPos, m.canvSize) ? $author$project$Main$restartLevel(m) : ((_Utils_cmp(m.levelPassed, m.levelSize) > -1) ? $author$project$Main$loadNextLevel(m) : _Utils_Tuple2(
-					A2($author$project$Main$onFrame, delta, m),
+					(($elm$time$Time$posixToMillis(new_posix) - $elm$time$Time$posixToMillis(m.posix)) >= 12) ? A2($author$project$Main$onFrame, new_posix, m) : m,
 					$elm$core$Platform$Cmd$none));
 			case 'SetTreesPos':
 				var pos = msg.a;
@@ -6088,7 +6088,6 @@ var $author$project$Main$finishLine = function (m) {
 			A2(cellLine, posY1, true),
 			A2(cellLine, posY2, false)));
 };
-var $elm$core$String$fromFloat = _String_fromNumber;
 var $elm$html$Html$h1 = _VirtualDom_node('h1');
 var $elm$html$Html$main_ = _VirtualDom_node('main');
 var $elm$virtual_dom$VirtualDom$Normal = function (a) {
@@ -6401,6 +6400,7 @@ var $joakin$elm_canvas$Canvas$Internal$CustomElementJsonApi$beginPath = A2($joak
 var $elm$core$String$concat = function (strings) {
 	return A2($elm$core$String$join, '', strings);
 };
+var $elm$core$String$fromFloat = _String_fromNumber;
 var $elm$core$Basics$round = _Basics_round;
 var $avh4$elm_color$Color$toCssString = function (_v0) {
 	var r = _v0.a;
@@ -7260,8 +7260,6 @@ var $author$project$Main$view = function (m) {
 		_List_Nil,
 		_List_fromArray(
 			[
-				$elm$html$Html$text(
-				$elm$core$String$fromFloat(m.delta)),
 				$author$project$Main$checkCanvSize(m.canvSize) ? A3(
 				$joakin$elm_canvas$Canvas$toHtml,
 				m.canvSize,

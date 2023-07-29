@@ -1,7 +1,8 @@
 module Main exposing (main)
 
 import Browser
-import Browser.Events exposing (onAnimationFrameDelta)
+import Browser.Events exposing (onAnimationFrame)
+import Time exposing (Posix, posixToMillis, millisToPosix)
 
 import Html exposing (Html, text)
 import Html.Attributes exposing (style)
@@ -24,8 +25,11 @@ import Tuple exposing (first, second)
 
 
 type alias Model =
-  { delta : Float
-  , canvSize : (Int, Int)
+  { canvSize : (Int, Int)
+  -- This is the POSIX time (time passed since 1 Jan 1970)
+  -- It is needed for FPS stabilization
+  -- FPS must not be very different on mobile and desktop versions
+  , posix : Posix
   , isMobile : Bool
   , clickState : ClickState
   , gameState : GameState
@@ -108,8 +112,8 @@ init screenSize =
     isMobile = (first screenSize) <= (second screenSize)
   in
     loadNextLevel
-      { delta = 0
-      , canvSize = canvSize
+      { canvSize = canvSize
+      , posix = millisToPosix 0
       , isMobile = isMobile
       , clickState = NotHold
       , gameState = Stop
@@ -141,7 +145,7 @@ toCanvSize (screenWidth, screenHeight) =
 type Msg
   -- It is msg that is called 60 times per sec
   -- for repaint (update) the canvas
-  = Frame Float
+  = Frame Posix
   | SetTreesPos (List Point)
   | ClickDown
   | ClickUp
@@ -150,7 +154,7 @@ type Msg
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg m =
   case msg of
-    Frame delta ->
+    Frame new_posix ->
       if isCollision m.ball m.treesPos m.canvSize 
       then
         restartLevel m
@@ -160,7 +164,12 @@ update msg m =
         loadNextLevel m
 
       else
-        ( onFrame delta m
+        ( -- FPS stabilization
+          if (posixToMillis new_posix) - (posixToMillis m.posix) >= 12
+          then
+            onFrame new_posix m
+          else
+            m
         , Cmd.none
         )
 
@@ -212,10 +221,10 @@ update msg m =
       )
 
 
-onFrame : Float -> Model -> Model
-onFrame delta m =
+onFrame : Posix -> Model -> Model
+onFrame posix m =
   { m
-    | delta = delta
+    | posix = posix
     , levelPassed = m.levelPassed - (floor m.slipVelocity)
     , slipVelocity = max maxSlipVel (m.slipVelocity + slipAcceleration)
     , ball =
@@ -319,7 +328,7 @@ subscriptions : Model -> Sub Msg
 subscriptions m =
   case m.gameState of
     Play ->
-      onAnimationFrameDelta Frame
+      onAnimationFrame Frame
 
     Stop -> 
       Sub.none
@@ -333,8 +342,7 @@ subscriptions m =
 view : Model -> Html Msg
 view m =
   Html.main_ []
-    [ m.delta |> String.fromFloat |> text
-    , if checkCanvSize m.canvSize
+    [ if checkCanvSize m.canvSize
       then
         Canvas.toHtml m.canvSize
           ( if m.isMobile
