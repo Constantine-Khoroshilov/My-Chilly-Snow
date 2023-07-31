@@ -1,7 +1,8 @@
 module Main exposing (main)
 
 import Browser
-import Browser.Events exposing (onAnimationFrameDelta)
+import Browser.Events exposing (onAnimationFrame)
+import Time exposing (Posix, posixToMillis, millisToPosix)
 
 import Html exposing (Html, text)
 import Html.Attributes exposing (style)
@@ -26,6 +27,11 @@ import Tuple exposing (first, second)
 type alias Model =
   { canvSize : (Int, Int)
   , isMobile : Bool
+  -- This is the current Posix time (time since 1970)
+  -- This is necessary to control the frequency of the call
+  -- onAnimationFrame (FPS control), which sends Sub Msg
+  -- with the current Posix time.
+  , posix : Posix
   , clickState : ClickState
   , gameState : GameState
   -- the current game level
@@ -109,6 +115,7 @@ init screenSize =
     loadNextLevel
       { canvSize = canvSize
       , isMobile = isMobile
+      , posix = millisToPosix 0
       , clickState = NotHold
       , gameState = Stop
       , level = 0
@@ -139,7 +146,7 @@ toCanvSize (screenWidth, screenHeight) =
 type Msg
   -- It is msg that is called 60 times per sec
   -- for repaint (update) the canvas
-  = Frame Float
+  = Frame Posix
   | SetTreesPos (List Point)
   | ClickDown
   | ClickUp
@@ -148,7 +155,7 @@ type Msg
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg m =
   case msg of
-    Frame _ ->
+    Frame posix ->
       if isCollision m.ball m.treesPos m.canvSize 
       then
         restartLevel m
@@ -159,6 +166,7 @@ update msg m =
 
       else
         ( onFrame m
+            |> \model -> { model | posix = posix }
         , Cmd.none
         )
 
@@ -316,7 +324,7 @@ subscriptions : Model -> Sub Msg
 subscriptions m =
   case m.gameState of
     Play ->
-      onAnimationFrameDelta Frame
+      onAnimationFrame Frame
 
     Stop -> 
       Sub.none
