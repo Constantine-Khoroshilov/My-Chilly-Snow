@@ -329,7 +329,7 @@ subscriptions m =
     Play ->
       ( \posix -> 
             if (posixToMillis posix) - 
-               (posixToMillis m.posix) <= (1000/90 |> floor)
+               (posixToMillis m.posix) <= (1000/100 |> floor)
             then
               SkipFrame
             else
@@ -369,7 +369,7 @@ view m =
           , statusBar m
           -- Version number
           , Canvas.text 
-              [ font { size = 9, family = "Arial" } ] (5, 10) "1.0.0"
+              [ font { size = 9, family = "Arial" } ] (5, 10) "1.0.1"
           ]
   
       else

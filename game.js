@@ -5642,7 +5642,7 @@ var $author$project$Main$subscriptions = function (m) {
 			function (posix) {
 				return (_Utils_cmp(
 					$elm$time$Time$posixToMillis(posix) - $elm$time$Time$posixToMillis(m.W),
-					$elm$core$Basics$floor(1000 / 90)) < 1) ? $author$project$Main$SkipFrame : $author$project$Main$Frame(posix);
+					$elm$core$Basics$floor(1000 / 100)) < 1) ? $author$project$Main$SkipFrame : $author$project$Main$Frame(posix);
 			});
 	} else {
 		return $elm$core$Platform$Sub$none;
@@ -7283,7 +7283,7 @@ var $author$project$Main$view = function (m) {
 								{aq: 'Arial', aL: 9})
 							]),
 						_Utils_Tuple2(5, 10),
-						'1.0.0')
+						'1.0.1')
 					])) : A2(
 				$elm$html$Html$article,
 				_List_fromArray(
