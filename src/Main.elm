@@ -329,7 +329,7 @@ subscriptions m =
     Play ->
       ( \posix -> 
             if (posixToMillis posix) - 
-               (posixToMillis m.posix) <= (1000/70 |> floor)
+               (posixToMillis m.posix) <= (1000/80 |> floor)
             then
               SkipFrame
             else
