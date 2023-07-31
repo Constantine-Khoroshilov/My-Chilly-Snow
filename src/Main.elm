@@ -367,6 +367,9 @@ view m =
           , paintBall m.ball
           , trees m
           , statusBar m
+          -- Version number
+          , Canvas.text 
+              [ font { size = 9, family = "Arial" } ] (5, 10) "1.0.0"
           ]
   
       else

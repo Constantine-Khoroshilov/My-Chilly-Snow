@@ -1857,7 +1857,7 @@ var _Platform_worker = F4(function(impl, flagDecoder, debugMetadata, args)
 	return _Platform_initialize(
 		flagDecoder,
 		args,
-		impl.a4,
+		impl.a5,
 		impl.bi,
 		impl.bg,
 		function() { return function() {} }
@@ -3943,7 +3943,7 @@ var _Browser_element = _Debugger_element || F4(function(impl, flagDecoder, debug
 	return _Platform_initialize(
 		flagDecoder,
 		args,
-		impl.a4,
+		impl.a5,
 		impl.bi,
 		impl.bg,
 		function(sendToApp, initialModel) {
@@ -3979,7 +3979,7 @@ var _Browser_document = _Debugger_document || F4(function(impl, flagDecoder, deb
 	return _Platform_initialize(
 		flagDecoder,
 		args,
-		impl.a4,
+		impl.a5,
 		impl.bi,
 		impl.bg,
 		function(sendToApp, initialModel) {
@@ -3992,7 +3992,7 @@ var _Browser_document = _Debugger_document || F4(function(impl, flagDecoder, deb
 			{
 				_VirtualDom_divertHrefToApp = divertHrefToApp;
 				var doc = view(model);
-				var nextNode = _VirtualDom_node('body')(_List_Nil)(doc.aT);
+				var nextNode = _VirtualDom_node('body')(_List_Nil)(doc.aV);
 				var patches = _VirtualDom_diff(currNode, nextNode);
 				bodyNode = _VirtualDom_applyPatches(bodyNode, currNode, patches, sendToApp);
 				currNode = nextNode;
@@ -4053,8 +4053,8 @@ function _Browser_makeAnimator(model, draw)
 
 function _Browser_application(impl)
 {
-	var onUrlChange = impl.ba;
-	var onUrlRequest = impl.bb;
+	var onUrlChange = impl.bb;
+	var onUrlRequest = impl.bc;
 	var key = function() { key.a(onUrlChange(_Browser_getUrl())); };
 
 	return _Browser_document({
@@ -4074,9 +4074,9 @@ function _Browser_application(impl)
 					var next = $elm$url$Url$fromString(href).a;
 					sendToApp(onUrlRequest(
 						(next
-							&& curr.aE === next.aE
-							&& curr.as === next.as
-							&& curr.aB.a === next.aB.a
+							&& curr.aF === next.aF
+							&& curr.at === next.at
+							&& curr.aC.a === next.aC.a
 						)
 							? $elm$browser$Browser$Internal(next)
 							: $elm$browser$Browser$External(href)
@@ -4084,9 +4084,9 @@ function _Browser_application(impl)
 				}
 			});
 		},
-		a4: function(flags)
+		a5: function(flags)
 		{
-			return A3(impl.a4, flags, _Browser_getUrl(), key);
+			return A3(impl.a5, flags, _Browser_getUrl(), key);
 		},
 		bj: impl.bj,
 		bi: impl.bi,
@@ -4156,17 +4156,17 @@ var _Browser_decodeEvent = F2(function(decoder, event)
 function _Browser_visibilityInfo()
 {
 	return (typeof _VirtualDom_doc.hidden !== 'undefined')
-		? { a2: 'hidden', aU: 'visibilitychange' }
+		? { a3: 'hidden', aW: 'visibilitychange' }
 		:
 	(typeof _VirtualDom_doc.mozHidden !== 'undefined')
-		? { a2: 'mozHidden', aU: 'mozvisibilitychange' }
+		? { a3: 'mozHidden', aW: 'mozvisibilitychange' }
 		:
 	(typeof _VirtualDom_doc.msHidden !== 'undefined')
-		? { a2: 'msHidden', aU: 'msvisibilitychange' }
+		? { a3: 'msHidden', aW: 'msvisibilitychange' }
 		:
 	(typeof _VirtualDom_doc.webkitHidden !== 'undefined')
-		? { a2: 'webkitHidden', aU: 'webkitvisibilitychange' }
-		: { a2: 'hidden', aU: 'visibilitychange' };
+		? { a3: 'webkitHidden', aW: 'webkitvisibilitychange' }
+		: { a3: 'hidden', aW: 'visibilitychange' };
 }
 
 
@@ -4247,12 +4247,12 @@ var _Browser_call = F2(function(functionName, id)
 function _Browser_getViewport()
 {
 	return {
-		aJ: _Browser_getScene(),
-		aN: {
-			aP: _Browser_window.pageXOffset,
-			aQ: _Browser_window.pageYOffset,
-			aO: _Browser_doc.documentElement.clientWidth,
-			ar: _Browser_doc.documentElement.clientHeight
+		aK: _Browser_getScene(),
+		aP: {
+			aR: _Browser_window.pageXOffset,
+			aS: _Browser_window.pageYOffset,
+			aQ: _Browser_doc.documentElement.clientWidth,
+			as: _Browser_doc.documentElement.clientHeight
 		}
 	};
 }
@@ -4262,8 +4262,8 @@ function _Browser_getScene()
 	var body = _Browser_doc.body;
 	var elem = _Browser_doc.documentElement;
 	return {
-		aO: Math.max(body.scrollWidth, body.offsetWidth, elem.scrollWidth, elem.offsetWidth, elem.clientWidth),
-		ar: Math.max(body.scrollHeight, body.offsetHeight, elem.scrollHeight, elem.offsetHeight, elem.clientHeight)
+		aQ: Math.max(body.scrollWidth, body.offsetWidth, elem.scrollWidth, elem.offsetWidth, elem.clientWidth),
+		as: Math.max(body.scrollHeight, body.offsetHeight, elem.scrollHeight, elem.offsetHeight, elem.clientHeight)
 	};
 }
 
@@ -4286,15 +4286,15 @@ function _Browser_getViewportOf(id)
 	return _Browser_withNode(id, function(node)
 	{
 		return {
-			aJ: {
-				aO: node.scrollWidth,
-				ar: node.scrollHeight
+			aK: {
+				aQ: node.scrollWidth,
+				as: node.scrollHeight
 			},
-			aN: {
-				aP: node.scrollLeft,
-				aQ: node.scrollTop,
-				aO: node.clientWidth,
-				ar: node.clientHeight
+			aP: {
+				aR: node.scrollLeft,
+				aS: node.scrollTop,
+				aQ: node.clientWidth,
+				as: node.clientHeight
 			}
 		};
 	});
@@ -4324,18 +4324,18 @@ function _Browser_getElement(id)
 		var x = _Browser_window.pageXOffset;
 		var y = _Browser_window.pageYOffset;
 		return {
-			aJ: _Browser_getScene(),
-			aN: {
-				aP: x,
-				aQ: y,
-				aO: _Browser_doc.documentElement.clientWidth,
-				ar: _Browser_doc.documentElement.clientHeight
+			aK: _Browser_getScene(),
+			aP: {
+				aR: x,
+				aS: y,
+				aQ: _Browser_doc.documentElement.clientWidth,
+				as: _Browser_doc.documentElement.clientHeight
 			},
-			aZ: {
-				aP: x + rect.left,
-				aQ: y + rect.top,
-				aO: rect.width,
-				ar: rect.height
+			a$: {
+				aR: x + rect.left,
+				aS: y + rect.top,
+				aQ: rect.width,
+				as: rect.height
 			}
 		};
 	});
@@ -4958,7 +4958,7 @@ var $elm$url$Url$Http = 0;
 var $elm$url$Url$Https = 1;
 var $elm$url$Url$Url = F6(
 	function (protocol, host, port_, path, query, fragment) {
-		return {aq: fragment, as: host, ay: path, aB: port_, aE: protocol, aF: query};
+		return {ar: fragment, at: host, az: path, aC: port_, aF: protocol, aG: query};
 	});
 var $elm$core$String$contains = _String_contains;
 var $elm$core$String$length = _String_length;
@@ -5510,7 +5510,7 @@ var $elm$browser$Browser$AnimationManager$Time = function (a) {
 };
 var $elm$browser$Browser$AnimationManager$State = F3(
 	function (subs, request, oldTime) {
-		return {ac: oldTime, aH: request, aK: subs};
+		return {ac: oldTime, aI: request, aM: subs};
 	});
 var $elm$browser$Browser$AnimationManager$init = $elm$core$Task$succeed(
 	A3($elm$browser$Browser$AnimationManager$State, _List_Nil, $elm$core$Maybe$Nothing, 0));
@@ -5521,7 +5521,7 @@ var $elm$core$Platform$sendToSelf = _Platform_sendToSelf;
 var $elm$core$Process$spawn = _Scheduler_spawn;
 var $elm$browser$Browser$AnimationManager$onEffects = F3(
 	function (router, subs, _v0) {
-		var request = _v0.aH;
+		var request = _v0.aI;
 		var oldTime = _v0.ac;
 		var _v1 = _Utils_Tuple2(request, subs);
 		if (_v1.a.$ === 1) {
@@ -5568,7 +5568,7 @@ var $elm$browser$Browser$AnimationManager$onEffects = F3(
 	});
 var $elm$browser$Browser$AnimationManager$onSelfMsg = F3(
 	function (router, newTime, _v0) {
-		var subs = _v0.aK;
+		var subs = _v0.aM;
 		var oldTime = _v0.ac;
 		var send = function (sub) {
 			if (!sub.$) {
@@ -6073,6 +6073,50 @@ var $author$project$Main$finishLine = function (m) {
 			A2(cellLine, posY1, true),
 			A2(cellLine, posY2, false)));
 };
+var $joakin$elm_canvas$Canvas$Internal$Canvas$SettingCommand = function (a) {
+	return {$: 0, a: a};
+};
+var $elm$json$Json$Encode$object = function (pairs) {
+	return _Json_wrap(
+		A3(
+			$elm$core$List$foldl,
+			F2(
+				function (_v0, obj) {
+					var k = _v0.a;
+					var v = _v0.b;
+					return A3(_Json_addField, k, v, obj);
+				}),
+			_Json_emptyObject(0),
+			pairs));
+};
+var $elm$json$Json$Encode$string = _Json_wrap;
+var $joakin$elm_canvas$Canvas$Internal$CustomElementJsonApi$field = F2(
+	function (name, value) {
+		return $elm$json$Json$Encode$object(
+			_List_fromArray(
+				[
+					_Utils_Tuple2(
+					'type',
+					$elm$json$Json$Encode$string('field')),
+					_Utils_Tuple2(
+					'name',
+					$elm$json$Json$Encode$string(name)),
+					_Utils_Tuple2('value', value)
+				]));
+	});
+var $joakin$elm_canvas$Canvas$Internal$CustomElementJsonApi$font = function (f) {
+	return A2(
+		$joakin$elm_canvas$Canvas$Internal$CustomElementJsonApi$field,
+		'font',
+		$elm$json$Json$Encode$string(f));
+};
+var $joakin$elm_canvas$Canvas$Settings$Text$font = function (_v0) {
+	var size = _v0.aL;
+	var family = _v0.aq;
+	return $joakin$elm_canvas$Canvas$Internal$Canvas$SettingCommand(
+		$joakin$elm_canvas$Canvas$Internal$CustomElementJsonApi$font(
+			$elm$core$String$fromInt(size) + ('px ' + family)));
+};
 var $elm$html$Html$h1 = _VirtualDom_node('h1');
 var $elm$html$Html$main_ = _VirtualDom_node('main');
 var $elm$virtual_dom$VirtualDom$Normal = function (a) {
@@ -6121,37 +6165,6 @@ var $author$project$Main$paintBall = function (ball) {
 			]));
 };
 var $joakin$elm_canvas$Canvas$Settings$Text$Center = 2;
-var $joakin$elm_canvas$Canvas$Internal$Canvas$SettingCommand = function (a) {
-	return {$: 0, a: a};
-};
-var $elm$json$Json$Encode$object = function (pairs) {
-	return _Json_wrap(
-		A3(
-			$elm$core$List$foldl,
-			F2(
-				function (_v0, obj) {
-					var k = _v0.a;
-					var v = _v0.b;
-					return A3(_Json_addField, k, v, obj);
-				}),
-			_Json_emptyObject(0),
-			pairs));
-};
-var $elm$json$Json$Encode$string = _Json_wrap;
-var $joakin$elm_canvas$Canvas$Internal$CustomElementJsonApi$field = F2(
-	function (name, value) {
-		return $elm$json$Json$Encode$object(
-			_List_fromArray(
-				[
-					_Utils_Tuple2(
-					'type',
-					$elm$json$Json$Encode$string('field')),
-					_Utils_Tuple2(
-					'name',
-					$elm$json$Json$Encode$string(name)),
-					_Utils_Tuple2('value', value)
-				]));
-	});
 var $joakin$elm_canvas$Canvas$Internal$CustomElementJsonApi$textAlign = function (align) {
 	return A2(
 		$joakin$elm_canvas$Canvas$Internal$CustomElementJsonApi$field,
@@ -6177,19 +6190,6 @@ var $joakin$elm_canvas$Canvas$Settings$Text$align = function (alignment) {
 		$joakin$elm_canvas$Canvas$Internal$CustomElementJsonApi$textAlign(
 			$joakin$elm_canvas$Canvas$Settings$Text$textAlignToString(alignment)));
 };
-var $joakin$elm_canvas$Canvas$Internal$CustomElementJsonApi$font = function (f) {
-	return A2(
-		$joakin$elm_canvas$Canvas$Internal$CustomElementJsonApi$field,
-		'font',
-		$elm$json$Json$Encode$string(f));
-};
-var $joakin$elm_canvas$Canvas$Settings$Text$font = function (_v0) {
-	var size = _v0.be;
-	var family = _v0.a0;
-	return $joakin$elm_canvas$Canvas$Internal$Canvas$SettingCommand(
-		$joakin$elm_canvas$Canvas$Internal$CustomElementJsonApi$font(
-			$elm$core$String$fromInt(size) + ('px ' + family)));
-};
 var $elm$core$Basics$sqrt = _Basics_sqrt;
 var $joakin$elm_canvas$Canvas$Settings$stroke = function (color) {
 	return $joakin$elm_canvas$Canvas$Internal$Canvas$SettingDrawOp(
@@ -6207,7 +6207,7 @@ var $joakin$elm_canvas$Canvas$text = F3(
 				m: _List_Nil,
 				u: $joakin$elm_canvas$Canvas$Internal$Canvas$NotSpecified,
 				v: $joakin$elm_canvas$Canvas$Internal$Canvas$DrawableText(
-					{aa: $elm$core$Maybe$Nothing, aA: point, ai: str})
+					{aa: $elm$core$Maybe$Nothing, aB: point, ai: str})
 			});
 	});
 var $author$project$Main$statusBar = function (m) {
@@ -6221,7 +6221,7 @@ var $author$project$Main$statusBar = function (m) {
 				_List_fromArray(
 					[
 						$joakin$elm_canvas$Canvas$Settings$Text$font(
-						{a0: 'Arial', be: 16}),
+						{aq: 'Arial', aL: 16}),
 						$joakin$elm_canvas$Canvas$Settings$Text$align(2),
 						$joakin$elm_canvas$Canvas$Settings$fill(fillColor),
 						$joakin$elm_canvas$Canvas$Settings$stroke(strokeColor)
@@ -6850,7 +6850,7 @@ var $joakin$elm_canvas$Canvas$renderTextStroke = F5(
 	});
 var $joakin$elm_canvas$Canvas$renderTextDrawOp = F3(
 	function (drawOp, txt, cmds) {
-		var _v0 = txt.aA;
+		var _v0 = txt.aB;
 		var x = _v0.a;
 		var y = _v0.b;
 		switch (drawOp.$) {
@@ -6927,11 +6927,11 @@ var $joakin$elm_canvas$Canvas$Internal$Texture$drawTexture = F4(
 			function () {
 				if (!t.$) {
 					var image = t.a;
-					return A9($joakin$elm_canvas$Canvas$Internal$CustomElementJsonApi$drawImage, 0, 0, image.aO, image.ar, x, y, image.aO, image.ar, image.V);
+					return A9($joakin$elm_canvas$Canvas$Internal$CustomElementJsonApi$drawImage, 0, 0, image.aQ, image.as, x, y, image.aQ, image.as, image.V);
 				} else {
 					var sprite = t.a;
 					var image = t.b;
-					return A9($joakin$elm_canvas$Canvas$Internal$CustomElementJsonApi$drawImage, sprite.aP, sprite.aQ, sprite.aO, sprite.ar, x, y, sprite.aO, sprite.ar, image.V);
+					return A9($joakin$elm_canvas$Canvas$Internal$CustomElementJsonApi$drawImage, sprite.aR, sprite.aS, sprite.aQ, sprite.as, x, y, sprite.aQ, sprite.as, image.V);
 				}
 			}(),
 			cmds);
@@ -7058,7 +7058,7 @@ var $joakin$elm_canvas$Canvas$Internal$Texture$decodeTextureImage = A2(
 				function (tagName, width, height) {
 					return (tagName === 'IMG') ? $elm$core$Maybe$Just(
 						$joakin$elm_canvas$Canvas$Internal$Texture$TImage(
-							{ar: height, V: image, aO: width})) : $elm$core$Maybe$Nothing;
+							{as: height, V: image, aQ: width})) : $elm$core$Maybe$Nothing;
 				}),
 			A2($elm$json$Json$Decode$field, 'tagName', $elm$json$Json$Decode$string),
 			A2($elm$json$Json$Decode$field, 'width', $elm$json$Json$Decode$float),
@@ -7121,15 +7121,15 @@ var $joakin$elm_canvas$Canvas$toHtmlWith = F3(
 					$joakin$elm_canvas$Canvas$render(entities)),
 				A2(
 					$elm$core$List$cons,
-					$elm$html$Html$Attributes$height(options.ar),
+					$elm$html$Html$Attributes$height(options.as),
 					A2(
 						$elm$core$List$cons,
-						$elm$html$Html$Attributes$width(options.aO),
+						$elm$html$Html$Attributes$width(options.aQ),
 						attrs))),
 			A2(
 				$elm$core$List$cons,
 				_Utils_Tuple2('__canvas', $joakin$elm_canvas$Canvas$cnvs),
-				A2($elm$core$List$map, $joakin$elm_canvas$Canvas$renderTextureSource, options.aM)));
+				A2($elm$core$List$map, $joakin$elm_canvas$Canvas$renderTextureSource, options.aO)));
 	});
 var $joakin$elm_canvas$Canvas$toHtml = F3(
 	function (_v0, attrs, entities) {
@@ -7137,7 +7137,7 @@ var $joakin$elm_canvas$Canvas$toHtml = F3(
 		var h = _v0.b;
 		return A3(
 			$joakin$elm_canvas$Canvas$toHtmlWith,
-			{ar: h, aM: _List_Nil, aO: w},
+			{as: h, aO: _List_Nil, aQ: w},
 			attrs,
 			entities);
 	});
@@ -7274,7 +7274,16 @@ var $author$project$Main$view = function (m) {
 						$author$project$Main$finishLine(m),
 						$author$project$Main$paintBall(m.g),
 						$author$project$Main$trees(m),
-						$author$project$Main$statusBar(m)
+						$author$project$Main$statusBar(m),
+						A3(
+						$joakin$elm_canvas$Canvas$text,
+						_List_fromArray(
+							[
+								$joakin$elm_canvas$Canvas$Settings$Text$font(
+								{aq: 'Arial', aL: 9})
+							]),
+						_Utils_Tuple2(5, 10),
+						'1.0.0')
 					])) : A2(
 				$elm$html$Html$article,
 				_List_fromArray(
@@ -7309,7 +7318,7 @@ var $author$project$Main$view = function (m) {
 			]));
 };
 var $author$project$Main$main = $elm$browser$Browser$element(
-	{a4: $author$project$Main$init, bg: $author$project$Main$subscriptions, bi: $author$project$Main$update, bj: $author$project$Main$view});
+	{a5: $author$project$Main$init, bg: $author$project$Main$subscriptions, bi: $author$project$Main$update, bj: $author$project$Main$view});
 _Platform_export({'Main':{'init':$author$project$Main$main(
 	A2(
 		$elm$json$Json$Decode$andThen,
