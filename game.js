@@ -5642,7 +5642,7 @@ var $author$project$Main$subscriptions = function (m) {
 			function (posix) {
 				return (_Utils_cmp(
 					$elm$time$Time$posixToMillis(posix) - $elm$time$Time$posixToMillis(m.W),
-					$elm$core$Basics$floor(1000 / 85)) < 1) ? $author$project$Main$SkipFrame : $author$project$Main$Frame(posix);
+					$elm$core$Basics$floor(1000 / 90)) < 1) ? $author$project$Main$SkipFrame : $author$project$Main$Frame(posix);
 			});
 	} else {
 		return $elm$core$Platform$Sub$none;
