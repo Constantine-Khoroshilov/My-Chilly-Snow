@@ -147,6 +147,7 @@ type Msg
   -- It is msg that is called 60 times per sec
   -- for repaint (update) the canvas
   = Frame Posix
+  | SkipFrame
   | SetTreesPos (List Point)
   | ClickDown
   | ClickUp
@@ -155,6 +156,8 @@ type Msg
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg m =
   case msg of
+    SkipFrame -> (m, Cmd.none)
+
     Frame posix ->
       if isCollision m.ball m.treesPos m.canvSize 
       then
@@ -324,7 +327,15 @@ subscriptions : Model -> Sub Msg
 subscriptions m =
   case m.gameState of
     Play ->
-      onAnimationFrame Frame
+      ( \posix -> 
+            if (posixToMillis posix) - 
+               (posixToMillis m.posix) <= (1000/70 |> floor)
+            then
+              SkipFrame
+            else
+              Frame posix
+      )
+        |> onAnimationFrame
 
     Stop -> 
       Sub.none
