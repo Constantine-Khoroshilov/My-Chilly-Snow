@@ -220,7 +220,7 @@ onFrame m k =
   change velocities and acceleration values. It only affects on 
   changing of coords -}
   { m
-    | levelPassed = m.levelPassed - (k * m.slipVelocity |> floor)
+    | levelPassed = m.levelPassed - (m.slipVelocity |> floor)
     , slipVelocity = max maxSlipVel (m.slipVelocity + slipAcceleration)
     , ball =
         m.ball

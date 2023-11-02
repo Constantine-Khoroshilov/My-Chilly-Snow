@@ -5731,7 +5731,7 @@ var $author$project$Main$onFrame = F2(
 							p: ball.p + ball.N
 						});
 				}(m.g),
-				q: m.q - $elm$core$Basics$floor(k * m.z),
+				q: m.q - $elm$core$Basics$floor(m.z),
 				z: A2($elm$core$Basics$max, $author$project$Main$maxSlipVel, m.z + $author$project$Main$slipAcceleration),
 				l: A2(
 					$elm$core$List$map,
