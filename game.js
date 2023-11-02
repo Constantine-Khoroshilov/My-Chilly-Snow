@@ -5736,7 +5736,14 @@ var $author$project$Main$onFrame = F2(
 				l: A2(
 					$elm$core$List$map,
 					A2($author$project$Main$move, 0, m.z),
-					m.l)
+					A2(
+						$elm$core$List$filter,
+						function (_v0) {
+							var x = _v0.a;
+							var y = _v0.b;
+							return y >= 0;
+						},
+						m.l))
 			});
 	});
 var $author$project$Main$restartLevel = function (m) {
@@ -6005,13 +6012,11 @@ var $avh4$elm_color$Color$white = A4($avh4$elm_color$Color$RgbaSpace, 255 / 255,
 var $elm$core$Basics$xor = _Basics_xor;
 var $author$project$Main$finishLine = function (m) {
 	var width = m.e.a;
-	var posY1 = (m.C - m.q) + m.g.y.b;
 	var isEven = function (n) {
 		return !A2($elm$core$Basics$modBy, 2, n);
 	};
 	var count = 40;
 	var w = width / count;
-	var posY2 = posY1 + w;
 	var cellsColors = function (flag) {
 		return A2(
 			$elm$core$List$map,
@@ -6055,6 +6060,9 @@ var $author$project$Main$finishLine = function (m) {
 					},
 					A2($elm$core$List$range, 0, count - 1)));
 		});
+	var ballY = m.g.y.b;
+	var posY1 = (m.C - m.q) + ballY;
+	var posY2 = posY1 + w;
 	return A2(
 		$joakin$elm_canvas$Canvas$group,
 		_List_Nil,

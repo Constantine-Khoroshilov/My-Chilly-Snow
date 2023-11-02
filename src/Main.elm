@@ -213,15 +213,15 @@ update msg m =
 onFrame : Model -> Float -> Model
 onFrame m k =
   {- k is the param required to stabilize the updating (recalculation) 
-  of the position (coords) of the game elements (ball, trees) on 
-  canvas. It helps cope with the different updating screen frequency 
-  of different devices. k depends on the screen updating frequency 
+  of the position (coords) of the game ball on canvas. It helps 
+  cope with the different updating screen frequency of different 
+  devices. k depends on the screen updating frequency 
   and is figured out in the subscriptions section. This param doesn't 
   change velocities and acceleration values. It only affects on 
   changing of coords -}
   { m
-    | levelPassed = m.levelPassed - (m.slipVelocity |> floor)
-    , slipVelocity = max maxSlipVel (m.slipVelocity + slipAcceleration)
+    | slipVelocity = max maxSlipVel (m.slipVelocity + slipAcceleration)
+    , levelPassed = m.levelPassed - (floor m.slipVelocity)
     , ball =
         m.ball
           |> \ball ->
@@ -231,7 +231,8 @@ onFrame m k =
                   , vx = ball.vx + ball.ax
                 }
     , treesPos =
-        List.map (move 0 m.slipVelocity) m.treesPos
+        List.filter (\(x, y) -> y >= 0) m.treesPos
+          |> List.map (move 0 m.slipVelocity)
   }
 
 
@@ -458,12 +459,13 @@ finishLine : Model -> Canvas.Renderable
 finishLine m =
   let
     width = first m.canvSize |> toFloat
+    ballY = second m.ball.pos
     -- square count
     count = 40
     -- square width (height)
     w = width / count
 
-    posY1 = (m.levelSize - m.levelPassed |> toFloat) + (second m.ball.pos)
+    posY1 = (m.levelSize - m.levelPassed |> toFloat) + ballY
     posY2 = posY1 + w
 
     isEven n =
