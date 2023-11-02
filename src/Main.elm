@@ -1,8 +1,7 @@
 module Main exposing (main)
 
 import Browser
-import Browser.Events exposing (onAnimationFrame)
-import Time exposing (Posix, posixToMillis, millisToPosix)
+import Browser.Events exposing (onAnimationFrameDelta)
 
 import Html exposing (Html, text)
 import Html.Attributes exposing (style)
@@ -27,11 +26,6 @@ import Tuple exposing (first, second)
 type alias Model =
   { canvSize : (Int, Int)
   , isMobile : Bool
-  -- This is the current Posix time (time since 1970)
-  -- This is necessary to control the frequency of the call
-  -- onAnimationFrame (FPS control), which sends Sub Msg
-  -- with the current Posix time.
-  , posix : Posix
   , clickState : ClickState
   , gameState : GameState
   -- the current game level
@@ -115,7 +109,6 @@ init screenSize =
     loadNextLevel
       { canvSize = canvSize
       , isMobile = isMobile
-      , posix = millisToPosix 0
       , clickState = NotHold
       , gameState = Stop
       , level = 0
@@ -146,8 +139,7 @@ toCanvSize (screenWidth, screenHeight) =
 type Msg
   -- It is msg that is called 60 times per sec
   -- for repaint (update) the canvas
-  = Frame Posix
-  | SkipFrame
+  = Frame Float
   | SetTreesPos (List Point)
   | ClickDown
   | ClickUp
@@ -156,9 +148,7 @@ type Msg
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg m =
   case msg of
-    SkipFrame -> (m, Cmd.none)
-
-    Frame posix ->
+    Frame k ->
       if isCollision m.ball m.treesPos m.canvSize 
       then
         restartLevel m
@@ -168,8 +158,7 @@ update msg m =
         loadNextLevel m
 
       else
-        ( onFrame m
-            |> \model -> { model | posix = posix }
+        ( onFrame m k
         , Cmd.none
         )
 
@@ -221,21 +210,28 @@ update msg m =
       )
 
 
-onFrame : Model -> Model
-onFrame m =
+onFrame : Model -> Float -> Model
+onFrame m k =
+  {- k is the param required to stabilize the updating (recalculation) 
+  of the position (coords) of the game elements (ball, trees) on 
+  canvas. It helps cope with the different updating screen frequency 
+  of different devices. k depends on the screen updating frequency 
+  and is figured out in the subscriptions section. This param doesn't 
+  change velocities and acceleration values. It only affects on 
+  changing of coords -}
   { m
-    | levelPassed = m.levelPassed - (floor m.slipVelocity)
+    | levelPassed = m.levelPassed - (k * m.slipVelocity |> floor)
     , slipVelocity = max maxSlipVel (m.slipVelocity + slipAcceleration)
     , ball =
         m.ball
-          |> \ball -> 
+          |> \ball ->
                 { ball 
-                  | pos = move ball.vx 0 ball.pos
+                  | pos = move (k * ball.vx) 0 ball.pos
                   -- Increase speed by acceleration
-                  , vx = ball.vx + ball.ax 
+                  , vx = ball.vx + ball.ax
                 }
     , treesPos =
-        List.map (move 0 m.slipVelocity) m.treesPos
+        List.map (move 0 (k * m.slipVelocity)) m.treesPos
   }
 
 
@@ -327,15 +323,7 @@ subscriptions : Model -> Sub Msg
 subscriptions m =
   case m.gameState of
     Play ->
-      ( \posix -> 
-            if (posixToMillis posix) - 
-               (posixToMillis m.posix) <= (1000/100 |> floor)
-            then
-              SkipFrame
-            else
-              Frame posix
-      )
-        |> onAnimationFrame
+      onAnimationFrameDelta (\delta -> Frame (delta / 16.666))
 
     Stop -> 
       Sub.none
@@ -369,12 +357,13 @@ view m =
           , statusBar m
           -- Version number
           , Canvas.text 
-              [ font { size = 9, family = "Arial" } ] (5, 10) "1.0.1"
+              [ font { size = 9, family = "Verdana" } ] (5, 10) "1.0.2"
           ]
   
       else
         Html.article 
-          [ style "text-align" "center"
+          [ style "margin-top" "45vh"
+          , style "text-align" "center"
           , style "font" "16px Verdana"
           ] 
           [ Html.h1 [] [ text "Упс :(" ]
