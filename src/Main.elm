@@ -231,7 +231,7 @@ onFrame m k =
                   , vx = ball.vx + ball.ax
                 }
     , treesPos =
-        List.map (move 0 (k * m.slipVelocity)) m.treesPos
+        List.map (move 0 m.slipVelocity) m.treesPos
   }
 
 

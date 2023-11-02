@@ -5735,7 +5735,7 @@ var $author$project$Main$onFrame = F2(
 				z: A2($elm$core$Basics$max, $author$project$Main$maxSlipVel, m.z + $author$project$Main$slipAcceleration),
 				l: A2(
 					$elm$core$List$map,
-					A2($author$project$Main$move, 0, k * m.z),
+					A2($author$project$Main$move, 0, m.z),
 					m.l)
 			});
 	});
