@@ -213,12 +213,12 @@ update msg m =
 onFrame : Model -> Float -> Model
 onFrame m k =
   {- k is the param required to stabilize the updating (recalculation) 
-  of the position (coords) of the game elements (ball, trees) on canvas. It helps 
-  cope with the different updating screen frequency of different 
-  devices. k depends on the screen updating frequency 
-  and is figured out in the subscriptions section. This param doesn't 
-  change velocities and acceleration values. It only affects on 
-  changing of coords -}
+     of the position (coords) of the game elements (ball, trees) on canvas. 
+     It helps cope with the different updating screen frequency of different 
+     devices. k depends on the screen updating frequency and is figured out 
+     in the subscriptions section. This param doesn't change velocities and 
+     acceleration values. It only affects on changing of coords 
+  -}
   { m
     | slipVelocity = max maxSlipVel (m.slipVelocity + slipAcceleration)
     , levelPassed = m.levelPassed - (round (k * m.slipVelocity))
@@ -285,7 +285,7 @@ loadNextLevel m =
         -- X coord
         (Random.float px (w - px))
         -- Y coord
-        (Random.float (ballY + py) (l - ballY - py)) 
+        (Random.float (ballY + py) (l + ballY - py)) 
   in
     ( { m 
         | gameState = Stop
@@ -356,9 +356,6 @@ view m =
           , paintBall m.ball
           , trees m
           , statusBar m
-          -- Version number
-          --, Canvas.text 
-          --    [ font { size = 9, family = "Verdana" } ] (5, 10) "1.0.3"
           ]
   
       else

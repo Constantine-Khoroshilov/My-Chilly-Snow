@@ -1,4 +1,4 @@
-(function(scope){ 
+(function(scope){
 'use strict';
 
 function F(arity, fun, wrapper) {
@@ -5456,7 +5456,7 @@ var $author$project$Main$loadNextLevel = function (m) {
 	var pointGenerator = A2(
 		$elm$random$Random$pair,
 		A2($elm$random$Random$float, px, w - px),
-		A2($elm$random$Random$float, ballY + py, (l - ballY) - py));
+		A2($elm$random$Random$float, ballY + py, (l + ballY) - py));
 	return _Utils_Tuple2(
 		_Utils_update(
 			m,
