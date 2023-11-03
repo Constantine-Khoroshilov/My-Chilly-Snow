@@ -149,7 +149,7 @@ update : Msg -> Model -> (Model, Cmd Msg)
 update msg m =
   case msg of
     Frame k ->
-      if False--isCollision m.ball m.treesPos m.canvSize 
+      if isCollision m.ball m.treesPos m.canvSize 
       then
         restartLevel m
 

@@ -5448,9 +5448,9 @@ var $author$project$Main$loadNextLevel = function (m) {
 	var levelSize = m.C + 1500;
 	var l = levelSize;
 	var count = $elm$core$Basics$floor(0.015 * l);
-	var ball = $author$project$Main$ballStartState(m.f);
+	var ball = $author$project$Main$ballStartState(m.e);
 	var ballY = ball.y.b;
-	var _v0 = _Utils_Tuple2(m.f.a, m.f.b);
+	var _v0 = _Utils_Tuple2(m.e.a, m.e.b);
 	var w = _v0.a;
 	var h = _v0.b;
 	var pointGenerator = A2(
@@ -5460,7 +5460,7 @@ var $author$project$Main$loadNextLevel = function (m) {
 	return _Utils_Tuple2(
 		_Utils_update(
 			m,
-			{h: ball, O: 1, I: 1, J: m.J + 1, q: 0, C: levelSize, z: $author$project$Main$minSlipVel, o: _List_Nil, S: _List_Nil}),
+			{g: ball, O: 1, I: 1, J: m.J + 1, q: 0, C: levelSize, z: $author$project$Main$minSlipVel, l: _List_Nil, S: _List_Nil}),
 		A2(
 			$elm$random$Random$generate,
 			$author$project$Main$SetTreesPos,
@@ -5484,8 +5484,8 @@ var $author$project$Main$init = function (screenSize) {
 	var canvSize = $author$project$Main$toCanvSize(screenSize);
 	return $author$project$Main$loadNextLevel(
 		{
-			h: $author$project$Main$ballStartState(canvSize),
-			f: canvSize,
+			g: $author$project$Main$ballStartState(canvSize),
+			e: canvSize,
 			O: 1,
 			I: 1,
 			Z: isMobile,
@@ -5493,7 +5493,7 @@ var $author$project$Main$init = function (screenSize) {
 			q: 0,
 			C: canvSize.b,
 			z: $author$project$Main$minSlipVel,
-			o: _List_Nil,
+			l: _List_Nil,
 			S: _List_Nil
 		});
 };
@@ -5648,8 +5648,27 @@ var $author$project$Main$Hold = 0;
 var $author$project$Main$Play = 0;
 var $author$project$Main$ballAX = 0.2;
 var $elm$core$Basics$ge = _Utils_ge;
-var $elm$core$Platform$Cmd$batch = _Platform_batch;
-var $elm$core$Platform$Cmd$none = $elm$core$Platform$Cmd$batch(_List_Nil);
+var $elm$core$List$any = F2(
+	function (isOkay, list) {
+		any:
+		while (true) {
+			if (!list.b) {
+				return false;
+			} else {
+				var x = list.a;
+				var xs = list.b;
+				if (isOkay(x)) {
+					return true;
+				} else {
+					var $temp$isOkay = isOkay,
+						$temp$list = xs;
+					isOkay = $temp$isOkay;
+					list = $temp$list;
+					continue any;
+				}
+			}
+		}
+	});
 var $elm$core$List$filter = F2(
 	function (isGood, list) {
 		return A3(
@@ -5661,6 +5680,36 @@ var $elm$core$List$filter = F2(
 			_List_Nil,
 			list);
 	});
+var $elm$core$Basics$pow = _Basics_pow;
+var $author$project$Main$isCollision = F3(
+	function (ball, treesPos, canvSize) {
+		var r = ball.W;
+		var _v0 = canvSize;
+		var w = _v0.a;
+		var h = _v0.b;
+		var _v1 = ball.y;
+		var bx = _v1.a;
+		var by = _v1.b;
+		return (bx < 0) || ((_Utils_cmp(bx, w) > 0) || A2(
+			$elm$core$List$any,
+			function (_v3) {
+				var x = _v3.a;
+				var y = _v3.b;
+				return _Utils_cmp(
+					A2($elm$core$Basics$pow, bx - x, 2) + A2($elm$core$Basics$pow, by - y, 2),
+					A2($elm$core$Basics$pow, r, 2)) < 1;
+			},
+			A2(
+				$elm$core$List$filter,
+				function (_v2) {
+					var x = _v2.a;
+					var y = _v2.b;
+					return _Utils_cmp(y, h) < 0;
+				},
+				treesPos)));
+	});
+var $elm$core$Platform$Cmd$batch = _Platform_batch;
+var $elm$core$Platform$Cmd$none = $elm$core$Platform$Cmd$batch(_List_Nil);
 var $author$project$Main$maxSlipVel = -8;
 var $author$project$Main$move = F3(
 	function (dx, dy, _v0) {
@@ -5675,17 +5724,17 @@ var $author$project$Main$onFrame = F2(
 		return _Utils_update(
 			m,
 			{
-				h: function (ball) {
+				g: function (ball) {
 					return _Utils_update(
 						ball,
 						{
 							y: A3($author$project$Main$move, k * ball.p, 0, ball.y),
 							p: ball.p + ball.N
 						});
-				}(m.h),
+				}(m.g),
 				q: m.q - $elm$core$Basics$round(k * m.z),
 				z: A2($elm$core$Basics$max, $author$project$Main$maxSlipVel, m.z + $author$project$Main$slipAcceleration),
-				o: A2(
+				l: A2(
 					$elm$core$List$map,
 					A2($author$project$Main$move, 0, k * m.z),
 					A2(
@@ -5695,7 +5744,7 @@ var $author$project$Main$onFrame = F2(
 							var y = _v0.b;
 							return y >= 0;
 						},
-						m.o))
+						m.l))
 			});
 	});
 var $author$project$Main$restartLevel = function (m) {
@@ -5703,11 +5752,11 @@ var $author$project$Main$restartLevel = function (m) {
 		_Utils_update(
 			m,
 			{
-				h: $author$project$Main$ballStartState(m.f),
+				g: $author$project$Main$ballStartState(m.e),
 				I: 1,
 				q: 0,
 				z: $author$project$Main$minSlipVel,
-				o: m.S
+				l: m.S
 			}),
 		$elm$core$Platform$Cmd$none);
 };
@@ -5716,7 +5765,7 @@ var $author$project$Main$update = F2(
 		switch (msg.$) {
 			case 0:
 				var k = msg.a;
-				return false ? $author$project$Main$restartLevel(m) : ((_Utils_cmp(m.q, m.C) > -1) ? $author$project$Main$loadNextLevel(m) : _Utils_Tuple2(
+				return A3($author$project$Main$isCollision, m.g, m.l, m.e) ? $author$project$Main$restartLevel(m) : ((_Utils_cmp(m.q, m.C) > -1) ? $author$project$Main$loadNextLevel(m) : _Utils_Tuple2(
 					A2($author$project$Main$onFrame, m, k),
 					$elm$core$Platform$Cmd$none));
 			case 1:
@@ -5724,21 +5773,21 @@ var $author$project$Main$update = F2(
 				return _Utils_Tuple2(
 					_Utils_update(
 						m,
-						{o: pos, S: pos}),
+						{l: pos, S: pos}),
 					$elm$core$Platform$Cmd$none);
 			case 2:
 				return _Utils_Tuple2(
 					_Utils_update(
 						m,
 						{
-							h: function (ball) {
+							g: function (ball) {
 								return _Utils_update(
 									ball,
 									{
 										N: (ball.p > 0) ? (-$author$project$Main$ballAX) : $author$project$Main$ballAX,
 										p: -ball.p
 									});
-							}(m.h),
+							}(m.g),
 							O: 0,
 							I: 0
 						}),
@@ -5748,14 +5797,14 @@ var $author$project$Main$update = F2(
 					_Utils_update(
 						m,
 						{
-							h: function (ball) {
+							g: function (ball) {
 								return _Utils_update(
 									ball,
 									{
 										N: 0,
 										p: (ball.p > 0) ? $author$project$Main$ballVX : (-$author$project$Main$ballVX)
 									});
-							}(m.h),
+							}(m.g),
 							O: 1
 						}),
 					$elm$core$Platform$Cmd$none);
@@ -5780,7 +5829,7 @@ var $joakin$elm_canvas$Canvas$Internal$Canvas$Renderable = $elm$core$Basics$iden
 var $joakin$elm_canvas$Canvas$clear = F3(
 	function (point, w, h) {
 		return {
-			l: _List_Nil,
+			m: _List_Nil,
 			u: $joakin$elm_canvas$Canvas$Internal$Canvas$NotSpecified,
 			v: A3($joakin$elm_canvas$Canvas$Internal$Canvas$DrawableClear, point, w, h)
 		};
@@ -5899,14 +5948,14 @@ var $joakin$elm_canvas$Canvas$addSettingsToRenderable = F2(
 						return _Utils_update(
 							r,
 							{
-								l: A2($elm$core$List$cons, cmd, r.l)
+								m: A2($elm$core$List$cons, cmd, r.m)
 							});
 					case 1:
 						var cmds = setting.a;
 						return _Utils_update(
 							r,
 							{
-								l: A3($elm$core$List$foldl, $elm$core$List$cons, r.l, cmds)
+								m: A3($elm$core$List$foldl, $elm$core$List$cons, r.m, cmds)
 							});
 					case 3:
 						var f = setting.a;
@@ -5932,7 +5981,7 @@ var $joakin$elm_canvas$Canvas$group = F2(
 			$joakin$elm_canvas$Canvas$addSettingsToRenderable,
 			settings,
 			{
-				l: _List_Nil,
+				m: _List_Nil,
 				u: $joakin$elm_canvas$Canvas$Internal$Canvas$NotSpecified,
 				v: $joakin$elm_canvas$Canvas$Internal$Canvas$DrawableGroup(entities)
 			});
@@ -5955,7 +6004,7 @@ var $joakin$elm_canvas$Canvas$shapes = F2(
 			$joakin$elm_canvas$Canvas$addSettingsToRenderable,
 			settings,
 			{
-				l: _List_Nil,
+				m: _List_Nil,
 				u: $joakin$elm_canvas$Canvas$Internal$Canvas$NotSpecified,
 				v: $joakin$elm_canvas$Canvas$Internal$Canvas$DrawableShapes(ss)
 			});
@@ -5963,7 +6012,7 @@ var $joakin$elm_canvas$Canvas$shapes = F2(
 var $avh4$elm_color$Color$white = A4($avh4$elm_color$Color$RgbaSpace, 255 / 255, 255 / 255, 255 / 255, 1.0);
 var $elm$core$Basics$xor = _Basics_xor;
 var $author$project$Main$finishLine = function (m) {
-	var width = m.f.a;
+	var width = m.e.a;
 	var isEven = function (n) {
 		return !A2($elm$core$Basics$modBy, 2, n);
 	};
@@ -6012,7 +6061,7 @@ var $author$project$Main$finishLine = function (m) {
 					},
 					A2($elm$core$List$range, 0, count - 1)));
 		});
-	var ballY = m.h.y.b;
+	var ballY = m.g.y.b;
 	var posY1 = (m.C - m.q) + ballY;
 	var posY2 = posY1 + w;
 	return A2(
@@ -6140,7 +6189,6 @@ var $joakin$elm_canvas$Canvas$Settings$Text$font = function (_v0) {
 		$joakin$elm_canvas$Canvas$Internal$CustomElementJsonApi$font(
 			$elm$core$String$fromInt(size) + ('px ' + family)));
 };
-var $elm$core$Basics$pow = _Basics_pow;
 var $elm$core$Basics$sqrt = _Basics_sqrt;
 var $joakin$elm_canvas$Canvas$Settings$stroke = function (color) {
 	return $joakin$elm_canvas$Canvas$Internal$Canvas$SettingDrawOp(
@@ -6155,14 +6203,14 @@ var $joakin$elm_canvas$Canvas$text = F3(
 			$joakin$elm_canvas$Canvas$addSettingsToRenderable,
 			settings,
 			{
-				l: _List_Nil,
+				m: _List_Nil,
 				u: $joakin$elm_canvas$Canvas$Internal$Canvas$NotSpecified,
 				v: $joakin$elm_canvas$Canvas$Internal$Canvas$DrawableText(
 					{_: $elm$core$Maybe$Nothing, az: point, ah: str})
 			});
 	});
 var $author$project$Main$statusBar = function (m) {
-	var width = m.f.a;
+	var width = m.e.a;
 	var print = F4(
 		function (_v3, fillColor, strokeColor, level) {
 			var x = _v3.a;
@@ -6182,7 +6230,7 @@ var $author$project$Main$statusBar = function (m) {
 		});
 	var p = m.q;
 	var l = m.C;
-	var height = m.f.b;
+	var height = m.e.b;
 	var r = 0.025 * height;
 	var h = $elm$core$Basics$sqrt(
 		A2($elm$core$Basics$pow, r, 2) + A2($elm$core$Basics$pow, r, 2));
@@ -6962,7 +7010,7 @@ var $joakin$elm_canvas$Canvas$renderGroup = F3(
 	});
 var $joakin$elm_canvas$Canvas$renderOne = F3(
 	function (parentDrawOp, _v0, cmds) {
-		var commands = _v0.l;
+		var commands = _v0.m;
 		var drawable = _v0.v;
 		var drawOp = _v0.u;
 		return A2(
@@ -7106,9 +7154,9 @@ var $joakin$elm_canvas$Canvas$path = F2(
 		return A2($joakin$elm_canvas$Canvas$Internal$Canvas$Path, startingPoint, segments);
 	});
 var $author$project$Main$trees = function (m) {
-	var width = m.f.a;
+	var width = m.e.a;
 	var postW = 0.01 * width;
-	var height = m.f.b;
+	var height = m.e.b;
 	var postH = 0.01 * height;
 	var posts = A2(
 		$joakin$elm_canvas$Canvas$shapes,
@@ -7128,7 +7176,7 @@ var $author$project$Main$trees = function (m) {
 					postW,
 					postH);
 			},
-			m.o));
+			m.l));
 	var bigBase = 0.05 * width;
 	var bigTriangle = A2(
 		$joakin$elm_canvas$Canvas$shapes,
@@ -7155,7 +7203,7 @@ var $author$project$Main$trees = function (m) {
 							_Utils_Tuple2((x + (bigBase / 1.7)) + (postW / 2), y - postH))
 						]));
 			},
-			m.o));
+			m.l));
 	var smallTriangle = A2(
 		$joakin$elm_canvas$Canvas$shapes,
 		_List_fromArray(
@@ -7181,7 +7229,7 @@ var $author$project$Main$trees = function (m) {
 							_Utils_Tuple2((x + (bigBase / 2)) + (postW / 2), y - (2.2 * postH)))
 						]));
 			},
-			m.o));
+			m.l));
 	return A2(
 		$joakin$elm_canvas$Canvas$group,
 		_List_Nil,
@@ -7194,9 +7242,9 @@ var $author$project$Main$view = function (m) {
 		_List_Nil,
 		_List_fromArray(
 			[
-				$author$project$Main$checkCanvSize(m.f) ? A3(
+				$author$project$Main$checkCanvSize(m.e) ? A3(
 				$joakin$elm_canvas$Canvas$toHtml,
-				m.f,
+				m.e,
 				m.Z ? _List_fromArray(
 					[
 						A2(
@@ -7220,9 +7268,9 @@ var $author$project$Main$view = function (m) {
 					]),
 				_List_fromArray(
 					[
-						$author$project$Main$clear(m.f),
+						$author$project$Main$clear(m.e),
 						$author$project$Main$finishLine(m),
-						$author$project$Main$paintBall(m.h),
+						$author$project$Main$paintBall(m.g),
 						$author$project$Main$trees(m),
 						$author$project$Main$statusBar(m)
 					])) : A2(
