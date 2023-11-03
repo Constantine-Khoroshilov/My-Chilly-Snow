@@ -11,7 +11,7 @@ import Json.Decode as Decode
 import Random
 
 import Canvas exposing (Point, shapes, group, lineTo)
-import Canvas.Settings exposing (fill, stroke)
+import Canvas.Settings exposing (fill, stroke) 
 import Canvas.Settings.Text exposing (TextAlign(..), font, align)
 import Color
 
