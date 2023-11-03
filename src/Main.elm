@@ -149,7 +149,7 @@ update : Msg -> Model -> (Model, Cmd Msg)
 update msg m =
   case msg of
     Frame k ->
-      if isCollision m.ball m.treesPos m.canvSize 
+      if False--isCollision m.ball m.treesPos m.canvSize 
       then
         restartLevel m
 
@@ -213,7 +213,7 @@ update msg m =
 onFrame : Model -> Float -> Model
 onFrame m k =
   {- k is the param required to stabilize the updating (recalculation) 
-  of the position (coords) of the game ball on canvas. It helps 
+  of the position (coords) of the game elements (ball, trees) on canvas. It helps 
   cope with the different updating screen frequency of different 
   devices. k depends on the screen updating frequency 
   and is figured out in the subscriptions section. This param doesn't 
@@ -221,7 +221,7 @@ onFrame m k =
   changing of coords -}
   { m
     | slipVelocity = max maxSlipVel (m.slipVelocity + slipAcceleration)
-    , levelPassed = m.levelPassed - (floor m.slipVelocity)
+    , levelPassed = m.levelPassed - (round (k * m.slipVelocity))
     , ball =
         m.ball
           |> \ball ->
@@ -232,7 +232,7 @@ onFrame m k =
                 }
     , treesPos =
         List.filter (\(x, y) -> y >= 0) m.treesPos
-          |> List.map (move 0 m.slipVelocity)
+          |> List.map (move 0 (k * m.slipVelocity))
   }
 
 
@@ -357,8 +357,8 @@ view m =
           , trees m
           , statusBar m
           -- Version number
-          , Canvas.text 
-              [ font { size = 9, family = "Verdana" } ] (5, 10) "1.0.2"
+          --, Canvas.text 
+          --    [ font { size = 9, family = "Verdana" } ] (5, 10) "1.0.3"
           ]
   
       else
