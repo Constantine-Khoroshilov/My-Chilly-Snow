@@ -15,8 +15,6 @@ import Canvas.Settings exposing (fill, stroke)
 import Canvas.Settings.Text exposing (TextAlign(..), font, align)
 import Color
 
-import Tuple exposing (first, second)
-
 
 
 
@@ -28,19 +26,9 @@ type alias Model =
   , isMobile : Bool
   , clickState : ClickState
   , gameState : GameState
-  -- the current game level
+  , time : Float
+  , eplasedTime : Float
   , level : Int
-  -- the higher the level num, the longer the size of the level
-  -- measured in pixels by height 
-  , levelSize : Int
-  -- the passed part of a level during the game
-  -- measured in pixels by height
-  , levelPassed : Int
-  -- this is the velocity vec all game objects except the ball
-  -- it is always negative and affects on Y coord, so directed upwards
-  , slipVelocity : Float
-  , treesStartPos : List Point
-  , treesPos : List Point
   , ball : Ball
   }
 
@@ -65,29 +53,51 @@ type GameState
   = Play | Stop
 
 
--- The game entities
+
+
+-- BALL
+
 
 type alias Ball =
-  { pos : Point
+  { x : Float
+  , y : Float
+  , direction : Int
+  , isBoost : Bool
   , radius : Float
-  -- The velocity vec
-  , vx : Float
-  -- The acceleration vec 
-  , ax : Float
   }
 
-ballVX = 4.5
-ballAX = 0.2
 
-ballStartState (canvWidth, canvHeight) =
-  { pos = 
-      ( toFloat canvWidth |> (*) 0.5
-      , toFloat canvHeight |> (*) 0.3
-      )
-  , radius = toFloat canvWidth |> (*) 0.015
-  , vx = ballVX
-  , ax = 0
+updateBallPos ball fps =
+  let
+    direction = toFloat ball.direction
+    decreaser = 60 / fps
+    acceleration = 2
+    speed = 4.5
+  in
+    { ball | x = ball.x + direction * decreaser * (speed + 
+        if ball.isBoost then acceleration else 0)
+    }
+
+
+updateBall ball isBoost isUpdateDir =
+  { ball 
+    | direction = (if isUpdateDir then -1 else 1) * ball.direction
+    , isBoost = isBoost 
   }
+
+
+getBall canvSize =
+  let
+    w = toFloat (Tuple.first canvSize)
+    h = toFloat (Tuple.second canvSize)
+  in
+    { x = 0.5 * w
+    , y = 0.3 * h
+    , direction = 1
+    , isBoost = False
+    , radius = 0.015 * w
+    }
+
 
 -- max or min by module
 
@@ -104,20 +114,17 @@ init : (Int, Int) -> (Model, Cmd Msg)
 init screenSize =
   let
     canvSize = toCanvSize screenSize
-    isMobile = (first screenSize) <= (second screenSize)
+    isMobile = False --(first screenSize) <= (second screenSize)
   in
     loadNextLevel
       { canvSize = canvSize
       , isMobile = isMobile
       , clickState = NotHold
       , gameState = Stop
+      , time = 0
+      , eplasedTime = 0
       , level = 0
-      , levelSize = second canvSize
-      , levelPassed = 0
-      , slipVelocity = minSlipVel
-      , treesStartPos = []
-      , treesPos = []
-      , ball = ballStartState canvSize
+      , ball = getBall canvSize
       }
 
 
@@ -137,8 +144,6 @@ toCanvSize (screenWidth, screenHeight) =
 
 
 type Msg
-  -- It is msg that is called 60 times per sec
-  -- for repaint (update) the canvas
   = Frame Float
   | SetTreesPos (List Point)
   | ClickDown
@@ -148,26 +153,17 @@ type Msg
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg m =
   case msg of
-    Frame k ->
-      if isCollision m.ball m.treesPos m.canvSize 
-      then
-        restartLevel m
-
-      else if m.levelPassed >= m.levelSize  
-      then
-        loadNextLevel m
-
-      else
-        ( onFrame m k
-        , Cmd.none
-        )
+    Frame delta ->
+      ( { m
+          | ball = updateBallPos m.ball (1000 / delta)
+          , time = m.time + delta
+        }
+      , Cmd.none
+      )
 
 
     SetTreesPos pos ->
-      ( { m 
-          | treesStartPos = pos
-          , treesPos = pos 
-        }
+      ( m
       , Cmd.none
       )
 
@@ -175,18 +171,8 @@ update msg m =
     ClickDown ->
       ( { m 
           | clickState = Hold
-          -- Start game
           , gameState = Play
-          , ball =
-              m.ball
-                |> \ball -> 
-                      { ball 
-                        | vx = -ball.vx
-                        , ax =
-                            -- Set the ball acceleration
-                            if ball.vx > 0 then -ballAX
-                            else ballAX
-                      }
+          , ball = updateBall m.ball True True
         }
       , Cmd.none
       )
@@ -195,121 +181,30 @@ update msg m =
     ClickUp ->
       ( { m 
           | clickState = NotHold
-          , ball = 
-              m.ball
-                |> \ball -> 
-                      { ball 
-                        | ax = 0
-                        , vx =
-                            -- Reset the ball speed
-                            if ball.vx > 0 then ballVX
-                            else -ballVX
-                      } 
+          , ball = updateBall m.ball False False
         }
       , Cmd.none
       )
-
-
-onFrame : Model -> Float -> Model
-onFrame m k =
-  {- k is the param required to stabilize the updating (recalculation) 
-     of the position (coords) of the game elements (ball, trees) on canvas. 
-     It helps cope with the different updating screen frequency of different 
-     devices. k depends on the screen updating frequency and is figured out 
-     in the subscriptions section. This param doesn't change velocities and 
-     acceleration values. It only affects on changing of coords 
-  -}
-  { m
-    | slipVelocity = max maxSlipVel (m.slipVelocity + slipAcceleration)
-    , levelPassed = m.levelPassed - (round (k * m.slipVelocity))
-    , ball =
-        m.ball
-          |> \ball ->
-                { ball 
-                  | pos = move (k * ball.vx) 0 ball.pos
-                  -- Increase speed by acceleration
-                  , vx = ball.vx + ball.ax
-                }
-    , treesPos =
-        List.filter (\(x, y) -> y >= 0) m.treesPos
-          |> List.map (move 0 (k * m.slipVelocity))
-  }
-
-
-move : Float -> Float -> Point -> Point
-move dx dy (x, y) =
-  (x + dx, y + dy)
-
-
-isCollision : Ball -> List Point -> (Int, Int) -> Bool
-isCollision ball treesPos canvSize =
-  let
-    (bx, by) = ball.pos
-    (w, h) = canvSize
-    r = ball.radius
-  in
-    -- Check collision with the walls
-    bx < 0 || bx > (toFloat w) ||
-    -- Check collision with the trees
-    ( List.filter (\(x, y) -> y < (toFloat h)) treesPos
-        |> List.any (\(x, y) -> (bx - x)^2 + (by - y)^2 <= r^2)
-    )
-
+  
 
 loadNextLevel : Model -> (Model, Cmd Msg)
 loadNextLevel m =
-  let
-    -- canvas size
-    (w, h) = 
-      ( first m.canvSize |> toFloat
-      , second m.canvSize |> toFloat
-      )
-
-    -- increase the next level size
-    levelSize = m.levelSize + 1500
-    -- reset ball state
-    ball = ballStartState m.canvSize
-
-    l = toFloat levelSize
-    ballY = second ball.pos
-    -- count of trees
-    count = floor (0.015 * l)
-
-    -- paddings
-    py = 100
-    px = 50
-
-    pointGenerator : Random.Generator Point
-    pointGenerator =
-      Random.pair
-        -- X coord
-        (Random.float px (w - px))
-        -- Y coord
-        (Random.float (ballY + py) (l + ballY - py)) 
-  in
-    ( { m 
+  ( { m 
         | gameState = Stop
         , clickState = NotHold
         , level = m.level + 1
-        , levelSize = levelSize
-        , levelPassed = 0
-        , slipVelocity = minSlipVel
-        , treesStartPos = []
-        , treesPos = []
-        , ball = ball
+        , time = 0
+        , eplasedTime = 0
+        , ball = getBall m.canvSize
       }
-    , Random.list count pointGenerator
-        |> Random.generate SetTreesPos
+    , Cmd.none
     )
 
 
 restartLevel m =
   ( { m 
       | gameState = Stop
-      , levelPassed = 0
-      , slipVelocity = minSlipVel
-      , treesPos = m.treesStartPos
-      , ball = ballStartState m.canvSize
+      , ball = getBall m.canvSize
     }
   , Cmd.none
   )
@@ -324,7 +219,8 @@ subscriptions : Model -> Sub Msg
 subscriptions m =
   case m.gameState of
     Play ->
-      onAnimationFrameDelta (\delta -> Frame (delta / 16.666))
+      --onAnimationFrame (\posix -> Frame (Time.posixToMillis posix))
+      onAnimationFrameDelta Frame
 
     Stop -> 
       Sub.none
@@ -352,10 +248,10 @@ view m =
               ]
           )
           [ clear m.canvSize
-          , finishLine m
+          --, finishLine m
           , paintBall m.ball
-          , trees m
-          , statusBar m
+          --, trees m
+          --, statusBar m
           ]
   
       else
@@ -397,136 +293,136 @@ paintBall : Ball -> Canvas.Renderable
 paintBall ball =
   shapes 
     [ fill (Color.rgb255 246 74 70) ] 
-    [ Canvas.circle ball.pos ball.radius ]
+    [ Canvas.circle (ball.x, ball.y) ball.radius ]
 
 
-statusBar : Model -> Canvas.Renderable
-statusBar m =
-  let
-    width = m.canvSize |> first |> toFloat
-    height = m.canvSize |> second |> toFloat 
+--statusBar : Model -> Canvas.Renderable
+--statusBar m =
+--  let
+--    width = m.canvSize |> first |> toFloat
+--    height = m.canvSize |> second |> toFloat 
 
-    (x1, y1) = (0.3 * width, 0.1 * height)
-    (x2, y2) = (0.7 * width, 0.1 * height)
-    r = 0.025 * height
+--    (x1, y1) = (0.3 * width, 0.1 * height)
+--    (x2, y2) = (0.7 * width, 0.1 * height)
+--    r = 0.025 * height
 
-    h = r^2 + r^2 |> sqrt
-    (x3, y3) = (x1 + h/2, y1 - h/2)
-    w1 = x2 - x1 - h
+--    h = r^2 + r^2 |> sqrt
+--    (x3, y3) = (x1 + h/2, y1 - h/2)
+--    w1 = x2 - x1 - h
 
-    l = toFloat m.levelSize
-    p = toFloat m.levelPassed
-    w2 = p / l * w1
+--    l = toFloat m.levelSize
+--    p = toFloat m.levelPassed
+--    w2 = p / l * w1
 
-    -- general color
-    color = Color.rgb255 54 79 107
+--    -- general color
+--    color = Color.rgb255 54 79 107
 
-    print (x, y) fillColor strokeColor level =
-      Canvas.text
-        [ font { size = 16, family = "Arial" }
-        , align Center
-        , fill fillColor
-        , stroke strokeColor
-        ]
-        (x, y + 4.5)
-        (String.fromInt level)
+--    print (x, y) fillColor strokeColor level =
+--      Canvas.text
+--        [ font { size = 16, family = "Arial" }
+--        , align Center
+--        , fill fillColor
+--        , stroke strokeColor
+--        ]
+--        (x, y + 4.5)
+--        (String.fromInt level)
 
-  in
-    group [ stroke color ]
-      [ shapes 
-          [ fill Color.white
-          ]
-          [ Canvas.rect (x3, y3) w1 h ]
-      , shapes 
-          [ fill color ]
-          [ Canvas.rect (x3, y3) w2 h ]
-      , shapes 
-          [ fill color ] 
-          [ Canvas.circle (x1, y1) r ]
-      , shapes
-          [ fill Color.white ]
-          [ Canvas.circle (x2, y2) r ]
+--  in
+--    group [ stroke color ]
+--      [ shapes 
+--          [ fill Color.white
+--          ]
+--          [ Canvas.rect (x3, y3) w1 h ]
+--      , shapes 
+--          [ fill color ]
+--          [ Canvas.rect (x3, y3) w2 h ]
+--      , shapes 
+--          [ fill color ] 
+--          [ Canvas.circle (x1, y1) r ]
+--      , shapes
+--          [ fill Color.white ]
+--          [ Canvas.circle (x2, y2) r ]
 
-      , print (x1, y1) Color.white Color.white m.level
-      , print (x2, y2) color color (m.level + 1)
-      ]
-
-
-finishLine : Model -> Canvas.Renderable
-finishLine m =
-  let
-    width = first m.canvSize |> toFloat
-    ballY = second m.ball.pos
-    -- square count
-    count = 40
-    -- square width (height)
-    w = width / count
-
-    posY1 = (m.levelSize - m.levelPassed |> toFloat) + ballY
-    posY2 = posY1 + w
-
-    isEven n =
-      (modBy 2 n) == 0
-
-    cell (x, y) color =
-      shapes
-        [ fill color ]
-        [ Canvas.rect (x, y) w w ]
-
-    cellsColors flag = 
-      List.range 0 (count - 1)
-        |> List.map 
-            (\n -> if xor flag (isEven n) then Color.black else Color.white)
-
-    cellLine posY flag =
-      List.range 0 (count - 1)
-        |> List.map (\n -> ((toFloat n) * w, posY))
-        |> List.map2 (\color coords -> cell coords color) (cellsColors flag)
-  in
-    List.append (cellLine posY1 True) (cellLine posY2 False)
-      |> group []
+--      , print (x1, y1) Color.white Color.white m.level
+--      , print (x2, y2) color color (m.level + 1)
+--      ]
 
 
-trees : Model -> Canvas.Renderable
-trees m =
-  let
-    width = m.canvSize |> first |> toFloat
-    height = m.canvSize |> second |> toFloat
+--finishLine : Model -> Canvas.Renderable
+--finishLine m =
+--  let
+--    width = first m.canvSize |> toFloat
+--    ballY = second m.ball.pos
+--    -- square count
+--    count = 40
+--    -- square width (height)
+--    w = width / count
 
-    postH = 0.01 * height
-    postW = 0.01 * width
+--    posY1 = (m.levelSize - m.levelPassed |> toFloat) + ballY
+--    posY2 = posY1 + w
 
-    posts =
-      List.map (\(x, y) -> Canvas.rect (x, y - postH) postW postH) m.treesPos
-        |> shapes [ fill (Color.rgb255 117 90 87) ]
+--    isEven n =
+--      (modBy 2 n) == 0
 
-    bigBase = 0.05 * width
+--    cell (x, y) color =
+--      shapes
+--        [ fill color ]
+--        [ Canvas.rect (x, y) w w ]
 
-    bigTriangle =
-      List.map 
-        ( \(x, y) -> 
-            Canvas.path ( x - (bigBase / 1.7) + (postW / 2), y - postH       )
-              [ lineTo  ( x  + (postW / 2)                 , y - 3.3 * postH )
-              , lineTo  ( x + (bigBase / 1.7) + (postW / 2), y - postH       )  
-              ]
-        ) m.treesPos
-          |> shapes [ fill (Color.rgb255 71 167 106), stroke (Color.rgb255 66 94 23) ]
+--    cellsColors flag = 
+--      List.range 0 (count - 1)
+--        |> List.map 
+--            (\n -> if xor flag (isEven n) then Color.black else Color.white)
 
-    smallTriangle =
-      List.map 
-        ( \(x, y) -> 
-            Canvas.path ( x - (bigBase / 2) + (postW / 2), y - 2.2 * postH   )
-              [ lineTo  ( x + (postW / 2)                , y - 4 * postH     )
-              , lineTo  ( x + (bigBase / 2) + (postW / 2), y - 2.2 * postH   )  
-              ]
-        ) m.treesPos
-          |> shapes [ fill (Color.rgb255 71 167 106), stroke (Color.rgb255 66 94 23) ]
-  in
-    group [] 
-      [ posts
-      , bigTriangle
-      , smallTriangle 
-      ]   
+--    cellLine posY flag =
+--      List.range 0 (count - 1)
+--        |> List.map (\n -> ((toFloat n) * w, posY))
+--        |> List.map2 (\color coords -> cell coords color) (cellsColors flag)
+--  in
+--    List.append (cellLine posY1 True) (cellLine posY2 False)
+--      |> group []
+
+
+--trees : Model -> Canvas.Renderable
+--trees m =
+--  let
+--    width = m.canvSize |> first |> toFloat
+--    height = m.canvSize |> second |> toFloat
+
+--    postH = 0.01 * height
+--    postW = 0.01 * width
+
+--    posts =
+--      List.map (\(x, y) -> Canvas.rect (x, y - postH) postW postH) m.treesPos
+--        |> shapes [ fill (Color.rgb255 117 90 87) ]
+
+--    bigBase = 0.05 * width
+
+--    bigTriangle =
+--      List.map 
+--        ( \(x, y) -> 
+--            Canvas.path ( x - (bigBase / 1.7) + (postW / 2), y - postH       )
+--              [ lineTo  ( x  + (postW / 2)                 , y - 3.3 * postH )
+--              , lineTo  ( x + (bigBase / 1.7) + (postW / 2), y - postH       )  
+--              ]
+--        ) m.treesPos
+--          |> shapes [ fill (Color.rgb255 71 167 106), stroke (Color.rgb255 66 94 23) ]
+
+--    smallTriangle =
+--      List.map 
+--        ( \(x, y) -> 
+--            Canvas.path ( x - (bigBase / 2) + (postW / 2), y - 2.2 * postH   )
+--              [ lineTo  ( x + (postW / 2)                , y - 4 * postH     )
+--              , lineTo  ( x + (bigBase / 2) + (postW / 2), y - 2.2 * postH   )  
+--              ]
+--        ) m.treesPos
+--          |> shapes [ fill (Color.rgb255 71 167 106), stroke (Color.rgb255 66 94 23) ]
+--  in
+--    group [] 
+--      [ posts
+--      , bigTriangle
+--      , smallTriangle 
+--      ]   
 
 
 
