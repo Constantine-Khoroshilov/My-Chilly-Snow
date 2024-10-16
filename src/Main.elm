@@ -111,14 +111,13 @@ slipAcceleration = -0.005
 -- The func init gets screen width and height from JS 
 
 init : (Int, Int) -> (Model, Cmd Msg)
-init screenSize =
+init (sw, sh) =
   let
-    canvSize = toCanvSize screenSize
-    isMobile = False --(first screenSize) <= (second screenSize)
+    canvSize = (min 412 sw, sh)
   in
     loadNextLevel
       { canvSize = canvSize
-      , isMobile = isMobile
+      , isMobile = False
       , clickState = NotHold
       , gameState = Stop
       , time = 0
@@ -126,16 +125,6 @@ init screenSize =
       , level = 0
       , ball = getBall canvSize
       }
-
-
-toCanvSize (screenWidth, screenHeight) =
-  let
-    maxCanvHeight = 915
-    maxCanvWidth = 412
-  in
-    ( min screenWidth maxCanvWidth
-    , min screenHeight maxCanvHeight
-    )
 
 
 
