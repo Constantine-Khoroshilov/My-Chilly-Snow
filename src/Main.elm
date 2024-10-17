@@ -25,7 +25,7 @@ type alias Model =
   { canvSize : (Int, Int)
   , clickState : ClickState
   , gameState : GameState
-  , time : Float
+  , time : Float 
   , eplasedTime : Float
   , level : Int
   , ball : Ball
@@ -118,7 +118,7 @@ init (sw, sh) =
       { canvSize = canvSize
       , clickState = NotHold
       , gameState = Stop
-      , time = 0
+      , time = 30000 -- ms
       , eplasedTime = 0
       , level = 0
       , ball = getBall canvSize
@@ -141,12 +141,19 @@ update : Msg -> Model -> (Model, Cmd Msg)
 update msg m =
   case msg of
     Frame delta ->
-      ( { m
-          | ball = updateBallPos m.ball (1000 / delta)
-          , time = m.time + delta
-        }
-      , Cmd.none
-      )
+      if isLevelPassed m then
+        loadNextLevel m
+
+      else if isCollision m then
+        restartLevel m
+
+      else
+        ( { m
+            | ball = updateBallPos m.ball (1000 / delta)
+            , eplasedTime = m.eplasedTime + delta
+          }
+        , Cmd.none
+        )
 
 
     SetTreesPos pos ->
@@ -172,6 +179,20 @@ update msg m =
         }
       , Cmd.none
       )
+
+
+isLevelPassed m =
+  m.time == m.eplasedTime
+
+
+isCollision m =
+  let
+    cw = toFloat (Tuple.first m.canvSize)
+    ch = toFloat (Tuple.second m.canvSize)
+    bx = m.ball.x
+    by = m.ball.y
+  in
+    bx >= cw || bx <= 0
   
 
 loadNextLevel : Model -> (Model, Cmd Msg)
@@ -180,7 +201,7 @@ loadNextLevel m =
         | gameState = Stop
         , clickState = NotHold
         , level = m.level + 1
-        , time = 0
+        , time = m.time + 30000
         , eplasedTime = 0
         , ball = getBall m.canvSize
       }
@@ -188,9 +209,11 @@ loadNextLevel m =
     )
 
 
+restartLevel :  Model -> (Model, Cmd Msg)
 restartLevel m =
   ( { m 
       | gameState = Stop
+      , eplasedTime = 0
       , ball = getBall m.canvSize
     }
   , Cmd.none
