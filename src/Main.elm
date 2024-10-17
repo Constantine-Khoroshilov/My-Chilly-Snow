@@ -3,7 +3,7 @@ module Main exposing (main)
 import Browser
 import Browser.Events exposing (onAnimationFrameDelta)
 
-import Html exposing (Html, text)
+import Html exposing (Html, text, main_, article, h1, p)
 import Html.Attributes exposing (style)
 import Html.Events exposing (on)
 
@@ -23,7 +23,6 @@ import Color
 
 type alias Model =
   { canvSize : (Int, Int)
-  , isMobile : Bool
   , clickState : ClickState
   , gameState : GameState
   , time : Float
@@ -117,7 +116,6 @@ init (sw, sh) =
   in
     loadNextLevel
       { canvSize = canvSize
-      , isMobile = False
       , clickState = NotHold
       , gameState = Stop
       , time = 0
@@ -222,20 +220,10 @@ subscriptions m =
 
 view : Model -> Html Msg
 view m =
-  Html.main_ []
+  main_ []
     [ if checkCanvSize m.canvSize
       then
-        Canvas.toHtml m.canvSize
-          ( if m.isMobile
-            then
-              [ on "touchstart" (Decode.succeed ClickDown)
-              , on "touchend" (Decode.succeed ClickUp)
-              ]
-            else
-              [ on "mousedown" (Decode.succeed ClickDown)
-              , on "mouseup" (Decode.succeed ClickUp)   
-              ]
-          )
+        Canvas.toHtml m.canvSize mouseEvents
           [ clear m.canvSize
           --, finishLine m
           , paintBall m.ball
@@ -244,41 +232,48 @@ view m =
           ]
   
       else
-        Html.article 
+        article 
           [ style "margin-top" "45vh"
           , style "text-align" "center"
           , style "font" "16px Verdana"
           ] 
-          [ Html.h1 [] [ text "Упс :(" ]
-          , Html.p [] [ text "Слишком маленький размер экрана..." ]
-          , Html.p [] [ text "The screen size is too small..." ]
+          [ h1 [] [ text "Упс :(" ]
+          , p [] [ text "Слишком маленький размер экрана..." ]
+          , p [] [ text "The screen size is too small..." ]
           ]
     ]
 
 
-checkCanvSize (canvWidth, canvHeight) =
+checkCanvSize canvSize =
   let
-    minCanvHeight = 600
+    w = toFloat (Tuple.first canvSize)
+    h = toFloat (Tuple.second canvSize)
     minCanvWidth = 280
+    minCanvHeight = 600
   in
-    if canvWidth < minCanvWidth
-    || canvHeight < minCanvHeight
-    then
-      False
-    else
-      True
+    w > minCanvWidth && h > minCanvHeight
 
 
-clear : (Int, Int) -> Canvas.Renderable
-clear (canvWidth, canvHeight) =
+touchEvents =
+  [ on "touchstart" (Decode.succeed ClickDown)
+  , on "touchend" (Decode.succeed ClickUp)
+  ]
+
+
+mouseEvents =
+  [ on "mousedown" (Decode.succeed ClickDown)
+  , on "mouseup" (Decode.succeed ClickUp)   
+  ]
+
+
+clear canvSize =
   let
-    width = toFloat canvWidth
-    height = toFloat canvHeight
+    w = toFloat (Tuple.first canvSize)
+    h = toFloat (Tuple.second canvSize)
   in
-    Canvas.clear (0, 0) width height
+    Canvas.clear (0, 0) w h
 
 
-paintBall : Ball -> Canvas.Renderable
 paintBall ball =
   shapes 
     [ fill (Color.rgb255 246 74 70) ] 
