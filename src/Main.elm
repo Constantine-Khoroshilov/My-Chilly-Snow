@@ -151,7 +151,7 @@ update msg m =
         ( { m
             | ball = updateBallPos m.ball (1000 / delta)
             , eplasedTime = m.eplasedTime + delta
-            , finishLine = updatePos m.ball.y m.time m.eplasedTime
+            , finishLine = getPos m.ball.y m.totalTime m.eplasedTime
           }
         , Cmd.none
         )
@@ -203,7 +203,7 @@ loadNextLevel m =
         | gameState = Stop
         , clickState = NotHold
         , level = m.level + 1 
-        , totalTime = time
+        , totalTime = t
         , eplasedTime = 0
         , ball = getBall m.canvSize
         , finishLine = getPos m.ball.y t 0
@@ -271,7 +271,7 @@ view m =
           , finishLine m
           , paintBall m.ball
           --, trees m
-          --, statusBar m
+          , statusBar m
           ]
   
       else
@@ -323,56 +323,64 @@ paintBall ball =
     [ Canvas.circle (ball.x, ball.y) ball.radius ]
 
 
---statusBar : Model -> Canvas.Renderable
---statusBar m =
---  let
---    width = m.canvSize |> first |> toFloat
---    height = m.canvSize |> second |> toFloat 
+statusBar : Model -> Canvas.Renderable
+statusBar m =
+  let
+    (w, h) = Tuple.mapBoth toFloat toFloat m.canvSize
 
---    (x1, y1) = (0.3 * width, 0.1 * height)
---    (x2, y2) = (0.7 * width, 0.1 * height)
---    r = 0.025 * height
+    -- the circles coords 
+    (x1, y1) = (0.3 * w, 0.1 * h)
+    (x2, y2) = (0.7 * w, 0.1 * h)
 
---    h = r^2 + r^2 |> sqrt
---    (x3, y3) = (x1 + h/2, y1 - h/2)
---    w1 = x2 - x1 - h
+    r = 0.020 * h
 
---    l = toFloat m.levelSize
---    p = toFloat m.levelPassed
---    w2 = p / l * w1
+    -- the height of the rectangle is calculated 
+    -- using the Pythagorean theorem
+    rectHeight = sqrt (r * r + r * r)
 
---    -- general color
---    color = Color.rgb255 54 79 107
+    -- the rectangles coords
+    -- x1 is calculated using the median property in a right triangle
+    (x3, y3) = (x1 + 0.5 * rectHeight, y1 - 0.5 * rectHeight)
 
---    print (x, y) fillColor strokeColor level =
---      Canvas.text
---        [ font { size = 16, family = "Arial" }
---        , align Center
---        , fill fillColor
---        , stroke strokeColor
---        ]
---        (x, y + 4.5)
---        (String.fromInt level)
+    -- the width of the 1st rectangle
+    rect1Width = x2 - x1 - rectHeight
 
---  in
---    group [ stroke color ]
---      [ shapes 
---          [ fill Color.white
---          ]
---          [ Canvas.rect (x3, y3) w1 h ]
---      , shapes 
---          [ fill color ]
---          [ Canvas.rect (x3, y3) w2 h ]
---      , shapes 
---          [ fill color ] 
---          [ Canvas.circle (x1, y1) r ]
---      , shapes
---          [ fill Color.white ]
---          [ Canvas.circle (x2, y2) r ]
+    -- the width of the 2nd rectangle
+    rect2Width = (m.eplasedTime / m.totalTime) * rect1Width
 
---      , print (x1, y1) Color.white Color.white m.level
---      , print (x2, y2) color color (m.level + 1)
---      ]
+    -- general color
+    color = Color.rgb255 54 79 107
+
+    number (x, y) clr level =
+      let
+        pos = (x, y + 0.35 * r)
+        lvl = String.fromInt level
+      in
+        Canvas.text
+          [ font { size = round r, family = "Arial" }
+          , align Center, fill clr, stroke clr
+          ]
+          pos
+          lvl       
+  in
+    group [ stroke color ]
+      [ shapes 
+          [ fill Color.white
+          ]
+          [ Canvas.rect (x3, y3) rect1Width rectHeight ]
+      , shapes 
+          [ fill color ]
+          [ Canvas.rect (x3, y3) rect2Width rectHeight ]
+      , shapes 
+          [ fill color ] 
+          [ Canvas.circle (x1, y1) r ]
+      , shapes
+          [ fill white ]
+          [ Canvas.circle (x2, y2) r ]
+
+      , number (x1, y1) white m.level
+      , number (x2, y2) color (m.level + 1)
+      ]
 
 
 finishLine : Model -> Canvas.Renderable

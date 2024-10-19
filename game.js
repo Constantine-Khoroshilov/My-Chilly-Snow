@@ -5172,20 +5172,19 @@ var $author$project$Main$getBall = function (canvSize) {
 	var h = canvSize.b;
 	return {direction: 1, isBoost: false, radius: 0.015 * w, x: 0.5 * w, y: 0.3 * h};
 };
-var $elm$core$Debug$log = _Debug_log;
+var $author$project$Main$getPos = F3(
+	function (endPoint, totalTime, eplasedTime) {
+		var tt = 0.001 * totalTime;
+		var speed = 8;
+		var et = 0.001 * eplasedTime;
+		var acceleration = 8;
+		var distance = endPoint + (tt * (speed + ((tt * 0.5) * acceleration)));
+		return _Utils_Tuple2(0, distance - (et * (speed + ((0.5 * et) * acceleration))));
+	});
 var $elm$core$Platform$Cmd$batch = _Platform_batch;
 var $elm$core$Platform$Cmd$none = $elm$core$Platform$Cmd$batch(_List_Nil);
-var $author$project$Main$updatePos = F3(
-	function (end, time, eplasedTime) {
-		var totalTime = time / 1000;
-		var t = eplasedTime / 1000;
-		var speed = 8;
-		var acceleration = 8;
-		var distance = end + (totalTime * (speed + ((totalTime * 0.5) * acceleration)));
-		return _Utils_Tuple2(0, distance - (t * (speed + ((0.5 * t) * acceleration))));
-	});
 var $author$project$Main$loadNextLevel = function (m) {
-	var time = m.time + 10000;
+	var t = m.totalTime + 10000;
 	return _Utils_Tuple2(
 		_Utils_update(
 			m,
@@ -5193,13 +5192,10 @@ var $author$project$Main$loadNextLevel = function (m) {
 				ball: $author$project$Main$getBall(m.canvSize),
 				clickState: $author$project$Main$NotHold,
 				eplasedTime: 0,
-				finishLine: A2(
-					$elm$core$Debug$log,
-					'finishLineStart',
-					A3($author$project$Main$updatePos, m.ball.y, time, 0)),
+				finishLine: A3($author$project$Main$getPos, m.ball.y, t, 0),
 				gameState: $author$project$Main$Stop,
 				level: m.level + 1,
-				time: time
+				totalTime: t
 			}),
 		$elm$core$Platform$Cmd$none);
 };
@@ -5222,7 +5218,7 @@ var $author$project$Main$init = function (_v0) {
 			finishLine: _Utils_Tuple2(0, sh),
 			gameState: $author$project$Main$Stop,
 			level: 0,
-			time: 5000
+			totalTime: 5000
 		});
 };
 var $elm$json$Json$Decode$int = _Json_decodeInt;
@@ -5384,7 +5380,7 @@ var $author$project$Main$isCollision = function (m) {
 	return (_Utils_cmp(bx, cw) > -1) || (bx <= 0);
 };
 var $author$project$Main$isLevelPassed = function (m) {
-	return _Utils_cmp(m.time, m.eplasedTime) < 1;
+	return _Utils_cmp(m.totalTime, m.eplasedTime) < 1;
 };
 var $author$project$Main$restartLevel = function (m) {
 	return _Utils_Tuple2(
@@ -5393,7 +5389,7 @@ var $author$project$Main$restartLevel = function (m) {
 			{
 				ball: $author$project$Main$getBall(m.canvSize),
 				eplasedTime: 0,
-				finishLine: A3($author$project$Main$updatePos, m.ball.y, m.time, 0),
+				finishLine: A3($author$project$Main$getPos, m.ball.y, m.totalTime, 0),
 				gameState: $author$project$Main$Stop
 			}),
 		$elm$core$Platform$Cmd$none);
@@ -5432,11 +5428,8 @@ var $author$project$Main$update = F2(
 						m,
 						{
 							ball: A2($author$project$Main$updateBallPos, m.ball, 1000 / delta),
-							eplasedTime: A2($elm$core$Debug$log, 'eplasedTime', m.eplasedTime + delta),
-							finishLine: A2(
-								$elm$core$Debug$log,
-								'finishLine',
-								A3($author$project$Main$updatePos, m.ball.y, m.time, m.eplasedTime))
+							eplasedTime: m.eplasedTime + delta,
+							finishLine: A3($author$project$Main$getPos, m.ball.y, m.totalTime, m.eplasedTime)
 						}),
 					$elm$core$Platform$Cmd$none));
 			case 'SetTreesPos':
@@ -5782,6 +5775,220 @@ var $author$project$Main$paintBall = function (ball) {
 				ball.radius)
 			]));
 };
+var $joakin$elm_canvas$Canvas$Settings$Text$Center = {$: 'Center'};
+var $joakin$elm_canvas$Canvas$Internal$Canvas$SettingCommand = function (a) {
+	return {$: 'SettingCommand', a: a};
+};
+var $elm$json$Json$Encode$object = function (pairs) {
+	return _Json_wrap(
+		A3(
+			$elm$core$List$foldl,
+			F2(
+				function (_v0, obj) {
+					var k = _v0.a;
+					var v = _v0.b;
+					return A3(_Json_addField, k, v, obj);
+				}),
+			_Json_emptyObject(_Utils_Tuple0),
+			pairs));
+};
+var $elm$json$Json$Encode$string = _Json_wrap;
+var $joakin$elm_canvas$Canvas$Internal$CustomElementJsonApi$field = F2(
+	function (name, value) {
+		return $elm$json$Json$Encode$object(
+			_List_fromArray(
+				[
+					_Utils_Tuple2(
+					'type',
+					$elm$json$Json$Encode$string('field')),
+					_Utils_Tuple2(
+					'name',
+					$elm$json$Json$Encode$string(name)),
+					_Utils_Tuple2('value', value)
+				]));
+	});
+var $joakin$elm_canvas$Canvas$Internal$CustomElementJsonApi$textAlign = function (align) {
+	return A2(
+		$joakin$elm_canvas$Canvas$Internal$CustomElementJsonApi$field,
+		'textAlign',
+		$elm$json$Json$Encode$string(align));
+};
+var $joakin$elm_canvas$Canvas$Settings$Text$textAlignToString = function (alignment) {
+	switch (alignment.$) {
+		case 'Left':
+			return 'left';
+		case 'Right':
+			return 'right';
+		case 'Center':
+			return 'center';
+		case 'Start':
+			return 'start';
+		default:
+			return 'end';
+	}
+};
+var $joakin$elm_canvas$Canvas$Settings$Text$align = function (alignment) {
+	return $joakin$elm_canvas$Canvas$Internal$Canvas$SettingCommand(
+		$joakin$elm_canvas$Canvas$Internal$CustomElementJsonApi$textAlign(
+			$joakin$elm_canvas$Canvas$Settings$Text$textAlignToString(alignment)));
+};
+var $joakin$elm_canvas$Canvas$Internal$CustomElementJsonApi$font = function (f) {
+	return A2(
+		$joakin$elm_canvas$Canvas$Internal$CustomElementJsonApi$field,
+		'font',
+		$elm$json$Json$Encode$string(f));
+};
+var $joakin$elm_canvas$Canvas$Settings$Text$font = function (_v0) {
+	var size = _v0.size;
+	var family = _v0.family;
+	return $joakin$elm_canvas$Canvas$Internal$Canvas$SettingCommand(
+		$joakin$elm_canvas$Canvas$Internal$CustomElementJsonApi$font(
+			$elm$core$String$fromInt(size) + ('px ' + family)));
+};
+var $elm$core$Tuple$mapBoth = F3(
+	function (funcA, funcB, _v0) {
+		var x = _v0.a;
+		var y = _v0.b;
+		return _Utils_Tuple2(
+			funcA(x),
+			funcB(y));
+	});
+var $elm$core$Basics$round = _Basics_round;
+var $elm$core$Basics$sqrt = _Basics_sqrt;
+var $joakin$elm_canvas$Canvas$Settings$stroke = function (color) {
+	return $joakin$elm_canvas$Canvas$Internal$Canvas$SettingDrawOp(
+		$joakin$elm_canvas$Canvas$Internal$Canvas$Stroke(color));
+};
+var $joakin$elm_canvas$Canvas$Internal$Canvas$DrawableText = function (a) {
+	return {$: 'DrawableText', a: a};
+};
+var $joakin$elm_canvas$Canvas$text = F3(
+	function (settings, point, str) {
+		return A2(
+			$joakin$elm_canvas$Canvas$addSettingsToRenderable,
+			settings,
+			$joakin$elm_canvas$Canvas$Internal$Canvas$Renderable(
+				{
+					commands: _List_Nil,
+					drawOp: $joakin$elm_canvas$Canvas$Internal$Canvas$NotSpecified,
+					drawable: $joakin$elm_canvas$Canvas$Internal$Canvas$DrawableText(
+						{maxWidth: $elm$core$Maybe$Nothing, point: point, text: str})
+				}));
+	});
+var $author$project$Main$statusBar = function (m) {
+	var color = A3($avh4$elm_color$Color$rgb255, 54, 79, 107);
+	var _v0 = A3($elm$core$Tuple$mapBoth, $elm$core$Basics$toFloat, $elm$core$Basics$toFloat, m.canvSize);
+	var w = _v0.a;
+	var h = _v0.b;
+	var r = 0.020 * h;
+	var number = F3(
+		function (_v4, clr, level) {
+			var x = _v4.a;
+			var y = _v4.b;
+			var pos = _Utils_Tuple2(x, y + (0.35 * r));
+			var lvl = $elm$core$String$fromInt(level);
+			return A3(
+				$joakin$elm_canvas$Canvas$text,
+				_List_fromArray(
+					[
+						$joakin$elm_canvas$Canvas$Settings$Text$font(
+						{
+							family: 'Arial',
+							size: $elm$core$Basics$round(r)
+						}),
+						$joakin$elm_canvas$Canvas$Settings$Text$align($joakin$elm_canvas$Canvas$Settings$Text$Center),
+						$joakin$elm_canvas$Canvas$Settings$fill(clr),
+						$joakin$elm_canvas$Canvas$Settings$stroke(clr)
+					]),
+				pos,
+				lvl);
+		});
+	var rectHeight = $elm$core$Basics$sqrt((r * r) + (r * r));
+	var _v1 = _Utils_Tuple2(0.3 * w, 0.1 * h);
+	var x1 = _v1.a;
+	var y1 = _v1.b;
+	var _v2 = _Utils_Tuple2(x1 + (0.5 * rectHeight), y1 - (0.5 * rectHeight));
+	var x3 = _v2.a;
+	var y3 = _v2.b;
+	var _v3 = _Utils_Tuple2(0.7 * w, 0.1 * h);
+	var x2 = _v3.a;
+	var y2 = _v3.b;
+	var rect1Width = (x2 - x1) - rectHeight;
+	var rect2Width = (m.eplasedTime / m.totalTime) * rect1Width;
+	return A2(
+		$joakin$elm_canvas$Canvas$group,
+		_List_fromArray(
+			[
+				$joakin$elm_canvas$Canvas$Settings$stroke(color)
+			]),
+		_List_fromArray(
+			[
+				A2(
+				$joakin$elm_canvas$Canvas$shapes,
+				_List_fromArray(
+					[
+						$joakin$elm_canvas$Canvas$Settings$fill($avh4$elm_color$Color$white)
+					]),
+				_List_fromArray(
+					[
+						A3(
+						$joakin$elm_canvas$Canvas$rect,
+						_Utils_Tuple2(x3, y3),
+						rect1Width,
+						rectHeight)
+					])),
+				A2(
+				$joakin$elm_canvas$Canvas$shapes,
+				_List_fromArray(
+					[
+						$joakin$elm_canvas$Canvas$Settings$fill(color)
+					]),
+				_List_fromArray(
+					[
+						A3(
+						$joakin$elm_canvas$Canvas$rect,
+						_Utils_Tuple2(x3, y3),
+						rect2Width,
+						rectHeight)
+					])),
+				A2(
+				$joakin$elm_canvas$Canvas$shapes,
+				_List_fromArray(
+					[
+						$joakin$elm_canvas$Canvas$Settings$fill(color)
+					]),
+				_List_fromArray(
+					[
+						A2(
+						$joakin$elm_canvas$Canvas$circle,
+						_Utils_Tuple2(x1, y1),
+						r)
+					])),
+				A2(
+				$joakin$elm_canvas$Canvas$shapes,
+				_List_fromArray(
+					[
+						$joakin$elm_canvas$Canvas$Settings$fill($avh4$elm_color$Color$white)
+					]),
+				_List_fromArray(
+					[
+						A2(
+						$joakin$elm_canvas$Canvas$circle,
+						_Utils_Tuple2(x2, y2),
+						r)
+					])),
+				A3(
+				number,
+				_Utils_Tuple2(x1, y1),
+				$avh4$elm_color$Color$white,
+				m.level),
+				A3(
+				number,
+				_Utils_Tuple2(x2, y2),
+				color,
+				m.level + 1)
+			]));
+};
 var $elm$virtual_dom$VirtualDom$style = _VirtualDom_style;
 var $elm$html$Html$Attributes$style = $elm$virtual_dom$VirtualDom$style;
 var $elm$virtual_dom$VirtualDom$text = _VirtualDom_text;
@@ -5823,20 +6030,6 @@ var $elm$virtual_dom$VirtualDom$keyedNode = function (tag) {
 };
 var $elm$html$Html$Keyed$node = $elm$virtual_dom$VirtualDom$keyedNode;
 var $joakin$elm_canvas$Canvas$Internal$CustomElementJsonApi$empty = _List_Nil;
-var $elm$json$Json$Encode$object = function (pairs) {
-	return _Json_wrap(
-		A3(
-			$elm$core$List$foldl,
-			F2(
-				function (_v0, obj) {
-					var k = _v0.a;
-					var v = _v0.b;
-					return A3(_Json_addField, k, v, obj);
-				}),
-			_Json_emptyObject(_Utils_Tuple0),
-			pairs));
-};
-var $elm$json$Json$Encode$string = _Json_wrap;
 var $joakin$elm_canvas$Canvas$Internal$CustomElementJsonApi$fn = F2(
 	function (name, args) {
 		return $elm$json$Json$Encode$object(
@@ -5854,25 +6047,10 @@ var $joakin$elm_canvas$Canvas$Internal$CustomElementJsonApi$fn = F2(
 				]));
 	});
 var $joakin$elm_canvas$Canvas$Internal$CustomElementJsonApi$beginPath = A2($joakin$elm_canvas$Canvas$Internal$CustomElementJsonApi$fn, 'beginPath', _List_Nil);
-var $joakin$elm_canvas$Canvas$Internal$CustomElementJsonApi$field = F2(
-	function (name, value) {
-		return $elm$json$Json$Encode$object(
-			_List_fromArray(
-				[
-					_Utils_Tuple2(
-					'type',
-					$elm$json$Json$Encode$string('field')),
-					_Utils_Tuple2(
-					'name',
-					$elm$json$Json$Encode$string(name)),
-					_Utils_Tuple2('value', value)
-				]));
-	});
 var $elm$core$String$concat = function (strings) {
 	return A2($elm$core$String$join, '', strings);
 };
 var $elm$core$String$fromFloat = _String_fromNumber;
-var $elm$core$Basics$round = _Basics_round;
 var $avh4$elm_color$Color$toCssString = function (_v0) {
 	var r = _v0.a;
 	var g = _v0.b;
@@ -6642,7 +6820,8 @@ var $author$project$Main$view = function (m) {
 					[
 						$author$project$Main$clear(m.canvSize),
 						$author$project$Main$finishLine(m),
-						$author$project$Main$paintBall(m.ball)
+						$author$project$Main$paintBall(m.ball),
+						$author$project$Main$statusBar(m)
 					])) : A2(
 				$elm$html$Html$article,
 				_List_fromArray(
