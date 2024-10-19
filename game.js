@@ -4370,6 +4370,89 @@ function _Browser_load(url)
 		}
 	}));
 }
+
+
+
+var _Bitwise_and = F2(function(a, b)
+{
+	return a & b;
+});
+
+var _Bitwise_or = F2(function(a, b)
+{
+	return a | b;
+});
+
+var _Bitwise_xor = F2(function(a, b)
+{
+	return a ^ b;
+});
+
+function _Bitwise_complement(a)
+{
+	return ~a;
+};
+
+var _Bitwise_shiftLeftBy = F2(function(offset, a)
+{
+	return a << offset;
+});
+
+var _Bitwise_shiftRightBy = F2(function(offset, a)
+{
+	return a >> offset;
+});
+
+var _Bitwise_shiftRightZfBy = F2(function(offset, a)
+{
+	return a >>> offset;
+});
+
+
+
+function _Time_now(millisToPosix)
+{
+	return _Scheduler_binding(function(callback)
+	{
+		callback(_Scheduler_succeed(millisToPosix(Date.now())));
+	});
+}
+
+var _Time_setInterval = F2(function(interval, task)
+{
+	return _Scheduler_binding(function(callback)
+	{
+		var id = setInterval(function() { _Scheduler_rawSpawn(task); }, interval);
+		return function() { clearInterval(id); };
+	});
+});
+
+function _Time_here()
+{
+	return _Scheduler_binding(function(callback)
+	{
+		callback(_Scheduler_succeed(
+			A2($elm$time$Time$customZone, -(new Date().getTimezoneOffset()), _List_Nil)
+		));
+	});
+}
+
+
+function _Time_getZoneName()
+{
+	return _Scheduler_binding(function(callback)
+	{
+		try
+		{
+			var name = $elm$time$Time$Name(Intl.DateTimeFormat().resolvedOptions().timeZone);
+		}
+		catch (e)
+		{
+			var name = $elm$time$Time$Offset(new Date().getTimezoneOffset());
+		}
+		callback(_Scheduler_succeed(name));
+	});
+}
 var $elm$core$List$cons = _List_cons;
 var $elm$core$Elm$JsArray$foldr = _JsArray_foldr;
 var $elm$core$Array$foldr = F3(
@@ -5161,6 +5244,10 @@ var $elm$core$Task$perform = F2(
 	});
 var $elm$browser$Browser$element = _Browser_element;
 var $elm$json$Json$Decode$index = _Json_decodeIndex;
+var $author$project$Main$Movable = F3(
+	function (x, y, distance) {
+		return {distance: distance, x: x, y: y};
+	});
 var $author$project$Main$NotHold = {$: 'NotHold'};
 var $author$project$Main$Stop = {$: 'Stop'};
 var $elm$core$Tuple$second = function (_v0) {
@@ -5172,17 +5259,227 @@ var $author$project$Main$getBall = function (canvSize) {
 	var h = canvSize.b;
 	return {direction: 1, isBoost: false, radius: 0.015 * w, x: 0.5 * w, y: 0.3 * h};
 };
-var $author$project$Main$getPos = F3(
-	function (endPoint, totalTime, eplasedTime) {
-		var tt = 0.001 * totalTime;
-		var speed = 8;
-		var et = 0.001 * eplasedTime;
-		var acceleration = 8;
-		var distance = endPoint + (tt * (speed + ((tt * 0.5) * acceleration)));
-		return _Utils_Tuple2(0, distance - (et * (speed + ((0.5 * et) * acceleration))));
+var $author$project$Main$GotTrees = function (a) {
+	return {$: 'GotTrees', a: a};
+};
+var $elm$random$Random$Generate = function (a) {
+	return {$: 'Generate', a: a};
+};
+var $elm$random$Random$Seed = F2(
+	function (a, b) {
+		return {$: 'Seed', a: a, b: b};
 	});
-var $elm$core$Platform$Cmd$batch = _Platform_batch;
-var $elm$core$Platform$Cmd$none = $elm$core$Platform$Cmd$batch(_List_Nil);
+var $elm$core$Bitwise$shiftRightZfBy = _Bitwise_shiftRightZfBy;
+var $elm$random$Random$next = function (_v0) {
+	var state0 = _v0.a;
+	var incr = _v0.b;
+	return A2($elm$random$Random$Seed, ((state0 * 1664525) + incr) >>> 0, incr);
+};
+var $elm$random$Random$initialSeed = function (x) {
+	var _v0 = $elm$random$Random$next(
+		A2($elm$random$Random$Seed, 0, 1013904223));
+	var state1 = _v0.a;
+	var incr = _v0.b;
+	var state2 = (state1 + x) >>> 0;
+	return $elm$random$Random$next(
+		A2($elm$random$Random$Seed, state2, incr));
+};
+var $elm$time$Time$Name = function (a) {
+	return {$: 'Name', a: a};
+};
+var $elm$time$Time$Offset = function (a) {
+	return {$: 'Offset', a: a};
+};
+var $elm$time$Time$Zone = F2(
+	function (a, b) {
+		return {$: 'Zone', a: a, b: b};
+	});
+var $elm$time$Time$customZone = $elm$time$Time$Zone;
+var $elm$time$Time$Posix = function (a) {
+	return {$: 'Posix', a: a};
+};
+var $elm$time$Time$millisToPosix = $elm$time$Time$Posix;
+var $elm$time$Time$now = _Time_now($elm$time$Time$millisToPosix);
+var $elm$time$Time$posixToMillis = function (_v0) {
+	var millis = _v0.a;
+	return millis;
+};
+var $elm$random$Random$init = A2(
+	$elm$core$Task$andThen,
+	function (time) {
+		return $elm$core$Task$succeed(
+			$elm$random$Random$initialSeed(
+				$elm$time$Time$posixToMillis(time)));
+	},
+	$elm$time$Time$now);
+var $elm$random$Random$step = F2(
+	function (_v0, seed) {
+		var generator = _v0.a;
+		return generator(seed);
+	});
+var $elm$random$Random$onEffects = F3(
+	function (router, commands, seed) {
+		if (!commands.b) {
+			return $elm$core$Task$succeed(seed);
+		} else {
+			var generator = commands.a.a;
+			var rest = commands.b;
+			var _v1 = A2($elm$random$Random$step, generator, seed);
+			var value = _v1.a;
+			var newSeed = _v1.b;
+			return A2(
+				$elm$core$Task$andThen,
+				function (_v2) {
+					return A3($elm$random$Random$onEffects, router, rest, newSeed);
+				},
+				A2($elm$core$Platform$sendToApp, router, value));
+		}
+	});
+var $elm$random$Random$onSelfMsg = F3(
+	function (_v0, _v1, seed) {
+		return $elm$core$Task$succeed(seed);
+	});
+var $elm$random$Random$Generator = function (a) {
+	return {$: 'Generator', a: a};
+};
+var $elm$random$Random$map = F2(
+	function (func, _v0) {
+		var genA = _v0.a;
+		return $elm$random$Random$Generator(
+			function (seed0) {
+				var _v1 = genA(seed0);
+				var a = _v1.a;
+				var seed1 = _v1.b;
+				return _Utils_Tuple2(
+					func(a),
+					seed1);
+			});
+	});
+var $elm$random$Random$cmdMap = F2(
+	function (func, _v0) {
+		var generator = _v0.a;
+		return $elm$random$Random$Generate(
+			A2($elm$random$Random$map, func, generator));
+	});
+_Platform_effectManagers['Random'] = _Platform_createManager($elm$random$Random$init, $elm$random$Random$onEffects, $elm$random$Random$onSelfMsg, $elm$random$Random$cmdMap);
+var $elm$random$Random$command = _Platform_leaf('Random');
+var $elm$random$Random$generate = F2(
+	function (tagger, generator) {
+		return $elm$random$Random$command(
+			$elm$random$Random$Generate(
+				A2($elm$random$Random$map, tagger, generator)));
+	});
+var $author$project$Main$ma = 8;
+var $author$project$Main$ms = 8;
+var $author$project$Main$getDistance = F2(
+	function (offset, time) {
+		var t = 0.001 * time;
+		return offset + (t * ($author$project$Main$ms + ((0.5 * t) * $author$project$Main$ma)));
+	});
+var $author$project$Main$setMovableDist = F3(
+	function (offset, time, movable) {
+		var d = A2($author$project$Main$getDistance, offset, time);
+		return _Utils_update(
+			movable,
+			{distance: d, y: d});
+	});
+var $elm$core$Basics$negate = function (n) {
+	return -n;
+};
+var $elm$core$Basics$abs = function (n) {
+	return (n < 0) ? (-n) : n;
+};
+var $elm$core$Bitwise$and = _Bitwise_and;
+var $elm$core$Bitwise$xor = _Bitwise_xor;
+var $elm$random$Random$peel = function (_v0) {
+	var state = _v0.a;
+	var word = (state ^ (state >>> ((state >>> 28) + 4))) * 277803737;
+	return ((word >>> 22) ^ word) >>> 0;
+};
+var $elm$random$Random$float = F2(
+	function (a, b) {
+		return $elm$random$Random$Generator(
+			function (seed0) {
+				var seed1 = $elm$random$Random$next(seed0);
+				var range = $elm$core$Basics$abs(b - a);
+				var n1 = $elm$random$Random$peel(seed1);
+				var n0 = $elm$random$Random$peel(seed0);
+				var lo = (134217727 & n1) * 1.0;
+				var hi = (67108863 & n0) * 1.0;
+				var val = ((hi * 134217728.0) + lo) / 9007199254740992.0;
+				var scaled = (val * range) + a;
+				return _Utils_Tuple2(
+					scaled,
+					$elm$random$Random$next(seed1));
+			});
+	});
+var $elm$random$Random$listHelp = F4(
+	function (revList, n, gen, seed) {
+		listHelp:
+		while (true) {
+			if (n < 1) {
+				return _Utils_Tuple2(revList, seed);
+			} else {
+				var _v0 = gen(seed);
+				var value = _v0.a;
+				var newSeed = _v0.b;
+				var $temp$revList = A2($elm$core$List$cons, value, revList),
+					$temp$n = n - 1,
+					$temp$gen = gen,
+					$temp$seed = newSeed;
+				revList = $temp$revList;
+				n = $temp$n;
+				gen = $temp$gen;
+				seed = $temp$seed;
+				continue listHelp;
+			}
+		}
+	});
+var $elm$random$Random$list = F2(
+	function (n, _v0) {
+		var gen = _v0.a;
+		return $elm$random$Random$Generator(
+			function (seed) {
+				return A4($elm$random$Random$listHelp, _List_Nil, n, gen, seed);
+			});
+	});
+var $elm$random$Random$map2 = F3(
+	function (func, _v0, _v1) {
+		var genA = _v0.a;
+		var genB = _v1.a;
+		return $elm$random$Random$Generator(
+			function (seed0) {
+				var _v2 = genA(seed0);
+				var a = _v2.a;
+				var seed1 = _v2.b;
+				var _v3 = genB(seed1);
+				var b = _v3.a;
+				var seed2 = _v3.b;
+				return _Utils_Tuple2(
+					A2(func, a, b),
+					seed2);
+			});
+	});
+var $elm$core$Basics$round = _Basics_round;
+var $author$project$Main$treesGenerator = F3(
+	function (totalTime, ballY, canvWidth) {
+		var paddingY = 50;
+		var paddingX = 50;
+		var minDistance = ballY + paddingY;
+		var maxDistance = A2($author$project$Main$getDistance, ballY, totalTime) - paddingY;
+		var count = $elm$core$Basics$round(0.01 * maxDistance);
+		return A2(
+			$elm$random$Random$list,
+			count,
+			A3(
+				$elm$random$Random$map2,
+				F2(
+					function (y, x) {
+						return A3($author$project$Main$Movable, x, y, y);
+					}),
+				A2($elm$random$Random$float, minDistance, maxDistance),
+				A2($elm$random$Random$float, paddingX, canvWidth - paddingX)));
+	});
 var $author$project$Main$loadNextLevel = function (m) {
 	var t = m.totalTime + 10000;
 	return _Utils_Tuple2(
@@ -5192,12 +5489,15 @@ var $author$project$Main$loadNextLevel = function (m) {
 				ball: $author$project$Main$getBall(m.canvSize),
 				clickState: $author$project$Main$NotHold,
 				eplasedTime: 0,
-				finishLine: A3($author$project$Main$getPos, m.ball.y, t, 0),
+				finishLine: A3($author$project$Main$setMovableDist, m.ball.y, t, m.finishLine),
 				gameState: $author$project$Main$Stop,
 				level: m.level + 1,
 				totalTime: t
 			}),
-		$elm$core$Platform$Cmd$none);
+		A2(
+			$elm$random$Random$generate,
+			$author$project$Main$GotTrees,
+			A3($author$project$Main$treesGenerator, t, m.ball.y, m.canvSize.a)));
 };
 var $elm$core$Basics$min = F2(
 	function (x, y) {
@@ -5215,10 +5515,13 @@ var $author$project$Main$init = function (_v0) {
 			canvSize: canvSize,
 			clickState: $author$project$Main$NotHold,
 			eplasedTime: 0,
-			finishLine: _Utils_Tuple2(0, sh),
+			finishLine: A3($author$project$Main$Movable, 0, sh, 0),
 			gameState: $author$project$Main$Stop,
 			level: 0,
-			totalTime: 5000
+			noRenderTQueue: _List_Nil,
+			renderTQueue: _List_Nil,
+			totalTime: 5000,
+			trees: _List_Nil
 		});
 };
 var $elm$json$Json$Decode$int = _Json_decodeInt;
@@ -5288,10 +5591,6 @@ var $elm$browser$Browser$AnimationManager$onEffects = F3(
 			}
 		}
 	});
-var $elm$time$Time$Posix = function (a) {
-	return {$: 'Posix', a: a};
-};
-var $elm$time$Time$millisToPosix = $elm$time$Time$Posix;
 var $elm$browser$Browser$AnimationManager$onSelfMsg = F3(
 	function (router, newTime, _v0) {
 		var subs = _v0.subs;
@@ -5382,6 +5681,8 @@ var $author$project$Main$isCollision = function (m) {
 var $author$project$Main$isLevelPassed = function (m) {
 	return _Utils_cmp(m.totalTime, m.eplasedTime) < 1;
 };
+var $elm$core$Platform$Cmd$batch = _Platform_batch;
+var $elm$core$Platform$Cmd$none = $elm$core$Platform$Cmd$batch(_List_Nil);
 var $author$project$Main$restartLevel = function (m) {
 	return _Utils_Tuple2(
 		_Utils_update(
@@ -5389,13 +5690,10 @@ var $author$project$Main$restartLevel = function (m) {
 			{
 				ball: $author$project$Main$getBall(m.canvSize),
 				eplasedTime: 0,
-				finishLine: A3($author$project$Main$getPos, m.ball.y, m.totalTime, 0),
+				finishLine: A3($author$project$Main$setMovableDist, m.ball.y, m.totalTime, m.finishLine),
 				gameState: $author$project$Main$Stop
 			}),
 		$elm$core$Platform$Cmd$none);
-};
-var $elm$core$Basics$negate = function (n) {
-	return -n;
 };
 var $author$project$Main$updateBall = F3(
 	function (ball, isBoost, isUpdateDir) {
@@ -5418,6 +5716,19 @@ var $author$project$Main$updateBallPos = F2(
 				x: ball.x + ((direction * decreaser) * (speed + (ball.isBoost ? acceleration : 0)))
 			});
 	});
+var $author$project$Main$getPos = F2(
+	function (distance, timeMoment) {
+		var t = 0.001 * timeMoment;
+		return distance - (t * ($author$project$Main$ms + ((0.5 * t) * $author$project$Main$ma)));
+	});
+var $author$project$Main$updateMovableY = F2(
+	function (time, movable) {
+		return _Utils_update(
+			movable,
+			{
+				y: A2($author$project$Main$getPos, movable.distance, time)
+			});
+	});
 var $author$project$Main$update = F2(
 	function (msg, m) {
 		switch (msg.$) {
@@ -5429,12 +5740,20 @@ var $author$project$Main$update = F2(
 						{
 							ball: A2($author$project$Main$updateBallPos, m.ball, 1000 / delta),
 							eplasedTime: m.eplasedTime + delta,
-							finishLine: A3($author$project$Main$getPos, m.ball.y, m.totalTime, m.eplasedTime)
+							finishLine: A2($author$project$Main$updateMovableY, m.eplasedTime + delta, m.finishLine),
+							trees: A2(
+								$elm$core$List$map,
+								$author$project$Main$updateMovableY(m.eplasedTime + delta),
+								m.trees)
 						}),
 					$elm$core$Platform$Cmd$none));
-			case 'SetTreesPos':
-				var pos = msg.a;
-				return _Utils_Tuple2(m, $elm$core$Platform$Cmd$none);
+			case 'GotTrees':
+				var trees = msg.a;
+				return _Utils_Tuple2(
+					_Utils_update(
+						m,
+						{trees: trees}),
+					$elm$core$Platform$Cmd$none);
 			case 'ClickDown':
 				return _Utils_Tuple2(
 					_Utils_update(
@@ -5661,9 +5980,9 @@ var $author$project$Main$finishLine = function (m) {
 	var countSquares = 80;
 	var squareSize = (cw / countSquares) * 2;
 	var square = F2(
-		function (_v1, color) {
-			var x = _v1.a;
-			var y = _v1.b;
+		function (_v2, color) {
+			var x = _v2.a;
+			var y = _v2.b;
 			return A2(
 				$joakin$elm_canvas$Canvas$shapes,
 				_List_fromArray(
@@ -5704,11 +6023,17 @@ var $author$project$Main$finishLine = function (m) {
 				return _List_Nil;
 			}
 		});
-	var line = function (coords) {
+	var line = function (_v1) {
+		var x = _v1.x;
+		var y = _v1.y;
+		var distance = _v1.distance;
 		return A2(
 			$joakin$elm_canvas$Canvas$group,
 			_List_Nil,
-			A2(squares, coords, countSquares));
+			A2(
+				squares,
+				_Utils_Tuple2(x, y),
+				countSquares));
 	};
 	return line(m.finishLine);
 };
@@ -5774,6 +6099,110 @@ var $author$project$Main$paintBall = function (ball) {
 				_Utils_Tuple2(ball.x, ball.y),
 				ball.radius)
 			]));
+};
+var $joakin$elm_canvas$Canvas$Internal$Canvas$LineTo = function (a) {
+	return {$: 'LineTo', a: a};
+};
+var $joakin$elm_canvas$Canvas$lineTo = function (point) {
+	return $joakin$elm_canvas$Canvas$Internal$Canvas$LineTo(point);
+};
+var $joakin$elm_canvas$Canvas$Internal$Canvas$Path = F2(
+	function (a, b) {
+		return {$: 'Path', a: a, b: b};
+	});
+var $joakin$elm_canvas$Canvas$path = F2(
+	function (startingPoint, segments) {
+		return A2($joakin$elm_canvas$Canvas$Internal$Canvas$Path, startingPoint, segments);
+	});
+var $joakin$elm_canvas$Canvas$Settings$stroke = function (color) {
+	return $joakin$elm_canvas$Canvas$Internal$Canvas$SettingDrawOp(
+		$joakin$elm_canvas$Canvas$Internal$Canvas$Stroke(color));
+};
+var $author$project$Main$paintTrees = function (m) {
+	var width = m.canvSize.a;
+	var postW = 0.01 * width;
+	var height = m.canvSize.b;
+	var postH = 0.01 * height;
+	var posts = A2(
+		$joakin$elm_canvas$Canvas$shapes,
+		_List_fromArray(
+			[
+				$joakin$elm_canvas$Canvas$Settings$fill(
+				A3($avh4$elm_color$Color$rgb255, 117, 90, 87))
+			]),
+		A2(
+			$elm$core$List$map,
+			function (_v2) {
+				var x = _v2.x;
+				var y = _v2.y;
+				var distance = _v2.distance;
+				return A3(
+					$joakin$elm_canvas$Canvas$rect,
+					_Utils_Tuple2(x, y - postH),
+					postW,
+					postH);
+			},
+			m.trees));
+	var bigBase = 0.05 * width;
+	var bigTriangle = A2(
+		$joakin$elm_canvas$Canvas$shapes,
+		_List_fromArray(
+			[
+				$joakin$elm_canvas$Canvas$Settings$fill(
+				A3($avh4$elm_color$Color$rgb255, 71, 167, 106)),
+				$joakin$elm_canvas$Canvas$Settings$stroke(
+				A3($avh4$elm_color$Color$rgb255, 66, 94, 23))
+			]),
+		A2(
+			$elm$core$List$map,
+			function (_v1) {
+				var x = _v1.x;
+				var y = _v1.y;
+				var distance = _v1.distance;
+				return A2(
+					$joakin$elm_canvas$Canvas$path,
+					_Utils_Tuple2((x - (bigBase / 1.7)) + (postW / 2), y - postH),
+					_List_fromArray(
+						[
+							$joakin$elm_canvas$Canvas$lineTo(
+							_Utils_Tuple2(x + (postW / 2), y - (3.3 * postH))),
+							$joakin$elm_canvas$Canvas$lineTo(
+							_Utils_Tuple2((x + (bigBase / 1.7)) + (postW / 2), y - postH))
+						]));
+			},
+			m.trees));
+	var smallTriangle = A2(
+		$joakin$elm_canvas$Canvas$shapes,
+		_List_fromArray(
+			[
+				$joakin$elm_canvas$Canvas$Settings$fill(
+				A3($avh4$elm_color$Color$rgb255, 71, 167, 106)),
+				$joakin$elm_canvas$Canvas$Settings$stroke(
+				A3($avh4$elm_color$Color$rgb255, 66, 94, 23))
+			]),
+		A2(
+			$elm$core$List$map,
+			function (_v0) {
+				var x = _v0.x;
+				var y = _v0.y;
+				var distance = _v0.distance;
+				return A2(
+					$joakin$elm_canvas$Canvas$path,
+					_Utils_Tuple2((x - (bigBase / 2)) + (postW / 2), y - (2.2 * postH)),
+					_List_fromArray(
+						[
+							$joakin$elm_canvas$Canvas$lineTo(
+							_Utils_Tuple2(x + (postW / 2), y - (4 * postH))),
+							$joakin$elm_canvas$Canvas$lineTo(
+							_Utils_Tuple2((x + (bigBase / 2)) + (postW / 2), y - (2.2 * postH)))
+						]));
+			},
+			m.trees));
+	return A2(
+		$joakin$elm_canvas$Canvas$group,
+		_List_Nil,
+		_List_fromArray(
+			[posts, bigTriangle, smallTriangle]));
 };
 var $joakin$elm_canvas$Canvas$Settings$Text$Center = {$: 'Center'};
 var $joakin$elm_canvas$Canvas$Internal$Canvas$SettingCommand = function (a) {
@@ -5853,12 +6282,7 @@ var $elm$core$Tuple$mapBoth = F3(
 			funcA(x),
 			funcB(y));
 	});
-var $elm$core$Basics$round = _Basics_round;
 var $elm$core$Basics$sqrt = _Basics_sqrt;
-var $joakin$elm_canvas$Canvas$Settings$stroke = function (color) {
-	return $joakin$elm_canvas$Canvas$Internal$Canvas$SettingDrawOp(
-		$joakin$elm_canvas$Canvas$Internal$Canvas$Stroke(color));
-};
 var $joakin$elm_canvas$Canvas$Internal$Canvas$DrawableText = function (a) {
 	return {$: 'DrawableText', a: a};
 };
@@ -6819,6 +7243,7 @@ var $author$project$Main$view = function (m) {
 						$author$project$Main$clear(m.canvSize),
 						$author$project$Main$finishLine(m),
 						$author$project$Main$paintBall(m.ball),
+						$author$project$Main$paintTrees(m),
 						$author$project$Main$statusBar(m)
 					])) : A2(
 				$elm$html$Html$article,

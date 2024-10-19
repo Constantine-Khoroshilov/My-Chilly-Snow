@@ -8,12 +8,12 @@ import Html.Attributes exposing (style)
 import Html.Events exposing (on)
 
 import Json.Decode as Decode
-import Random
+import Random exposing (Generator)
 
 import Canvas exposing (Point, shapes, group, lineTo)
 import Canvas.Settings exposing (fill, stroke) 
 import Canvas.Settings.Text exposing (TextAlign(..), font, align)
-import Color exposing (black, white)
+import Color exposing (Color, black, white)
 
 
 
@@ -29,7 +29,16 @@ type alias Model =
   , eplasedTime : Float -- ms
   , level : Int
   , ball : Ball
-  , finishLine : Point -- pos
+  , finishLine : Movable 
+  , trees : List Movable
+
+  -- the queue of trees that are rendered on the canvas
+
+  , renderTQueue : List Movable 
+
+  -- the queue of trees waiting to be rendered on the canvas
+
+  , noRenderTQueue : List Movable
   }
 
 
@@ -51,6 +60,53 @@ type ClickState
 
 type GameState
   = Play | Stop
+
+
+
+
+-- MOVABLE
+
+
+type alias Movable =
+  { x : Float
+  , y : Float
+
+  -- the distance is the initial value of 
+  -- the y coordinate of the movable object
+
+  , distance : Float
+  }
+
+
+setMovableDist offset time movable =
+  let d = getDistance offset time in
+    { movable | distance = d, y = d }
+
+
+updateMovableY time movable =
+  { movable | y = getPos movable.distance time }
+
+
+-- The speed and the acceleration of the movable objects
+
+ms = 8
+ma = 8
+
+
+{- The following function is necessary to calculate 
+   the y coordinate of the movable objects at a certain time moment.
+
+   The distance is the initial value of the y coordinate.
+-}
+
+getPos distance timeMoment =
+  let t = 0.001 * timeMoment in
+    distance - t * (ms + 0.5 * t * ma)
+
+
+getDistance offset time =
+  let t = 0.001 * time in
+    offset + t * (ms + 0.5 * t * ma)
 
 
 
@@ -121,7 +177,10 @@ init (sw, sh) =
       , eplasedTime = 0
       , level = 0
       , ball = getBall canvSize
-      , finishLine = (0, toFloat sh)
+      , finishLine = Movable 0 (toFloat sh) 0
+      , trees = []
+      , renderTQueue = []
+      , noRenderTQueue = []
       }
 
 
@@ -132,7 +191,7 @@ init (sw, sh) =
 
 type Msg
   = Frame Float
-  | SetTreesPos (List Point)
+  | GotTrees (List Movable)
   | ClickDown
   | ClickUp
 
@@ -151,14 +210,15 @@ update msg m =
         ( { m
             | ball = updateBallPos m.ball (1000 / delta)
             , eplasedTime = m.eplasedTime + delta
-            , finishLine = getPos m.ball.y m.totalTime m.eplasedTime
+            , finishLine = updateMovableY (m.eplasedTime + delta) m.finishLine
+            , trees = List.map (updateMovableY (m.eplasedTime + delta)) m.trees
           }
         , Cmd.none
         )
 
 
-    SetTreesPos pos ->
-      ( m
+    GotTrees trees ->
+      ( { m | trees = trees }
       , Cmd.none
       )
 
@@ -206,9 +266,11 @@ loadNextLevel m =
         , totalTime = t
         , eplasedTime = 0
         , ball = getBall m.canvSize
-        , finishLine = getPos m.ball.y t 0
+        , finishLine = setMovableDist m.ball.y t m.finishLine
       }
-    , Cmd.none
+    , Random.generate GotTrees
+        <| treesGenerator t m.ball.y 
+        <| toFloat (Tuple.first m.canvSize) 
     )
 
 
@@ -218,27 +280,26 @@ restartLevel m =
       | gameState = Stop
       , eplasedTime = 0
       , ball = getBall m.canvSize
-      , finishLine = getPos m.ball.y m.totalTime 0
+      , finishLine = setMovableDist m.ball.y m.totalTime m.finishLine
     }
   , Cmd.none
   )
 
 
--- The following function is necessary to calculate 
--- the positions of game objects at a certain time moment,
--- endPoint is the point at which the movement will be stopped.
-
-getPos endPoint totalTime eplasedTime =
+treesGenerator : Float -> Float -> Float -> Generator (List Movable)
+treesGenerator totalTime ballY canvWidth =
   let
-    speed = 8
-    acceleration = 8
-    et = 0.001 * eplasedTime
-    tt = 0.001 * totalTime
+    paddingY = 50
+    paddingX = 50
 
-    distance =
-      endPoint + tt * (speed + tt * 0.5 * acceleration)
+    minDistance = ballY + paddingY
+    maxDistance = getDistance ballY totalTime - paddingY 
+
+    count = round (0.05 * maxDistance)
   in
-    (0, distance - et * (speed + 0.5 * et * acceleration))
+    Random.float paddingX (canvWidth - paddingX)
+      |> Random.map2 (\y x -> Movable x y y) (Random.float minDistance maxDistance)
+      |> Random.list count
 
 
 
@@ -270,7 +331,7 @@ view m =
           [ clear m.canvSize
           , finishLine m
           , paintBall m.ball
-          --, trees m
+          , paintTrees m
           , statusBar m
           ]
   
@@ -407,52 +468,52 @@ finishLine m =
       else 
         []
       
-    line coords =
-      squares coords countSquares |> group []
+    line { x, y, distance } =
+      squares (x, y) countSquares |> group []
   in
     line m.finishLine
 
 
---trees : Model -> Canvas.Renderable
---trees m =
---  let
---    width = m.canvSize |> first |> toFloat
---    height = m.canvSize |> second |> toFloat
+paintTrees : Model -> Canvas.Renderable
+paintTrees m =
+  let
+    width = m.canvSize |> Tuple.first |> toFloat
+    height = m.canvSize |> Tuple.second |> toFloat
 
---    postH = 0.01 * height
---    postW = 0.01 * width
+    postH = 0.01 * height
+    postW = 0.01 * width
 
---    posts =
---      List.map (\(x, y) -> Canvas.rect (x, y - postH) postW postH) m.treesPos
---        |> shapes [ fill (Color.rgb255 117 90 87) ]
+    posts =
+      List.map (\{ x, y, distance } -> Canvas.rect (x, y - postH) postW postH) m.trees
+        |> shapes [ fill (Color.rgb255 117 90 87) ]
 
---    bigBase = 0.05 * width
+    bigBase = 0.05 * width
 
---    bigTriangle =
---      List.map 
---        ( \(x, y) -> 
---            Canvas.path ( x - (bigBase / 1.7) + (postW / 2), y - postH       )
---              [ lineTo  ( x  + (postW / 2)                 , y - 3.3 * postH )
---              , lineTo  ( x + (bigBase / 1.7) + (postW / 2), y - postH       )  
---              ]
---        ) m.treesPos
---          |> shapes [ fill (Color.rgb255 71 167 106), stroke (Color.rgb255 66 94 23) ]
+    bigTriangle =
+      List.map 
+        ( \{ x, y, distance } -> 
+            Canvas.path ( x - (bigBase / 1.7) + (postW / 2), y - postH       )
+              [ lineTo  ( x  + (postW / 2)                 , y - 3.3 * postH )
+              , lineTo  ( x + (bigBase / 1.7) + (postW / 2), y - postH       )  
+              ]
+        ) m.trees
+          |> shapes [ fill (Color.rgb255 71 167 106), stroke (Color.rgb255 66 94 23) ]
 
---    smallTriangle =
---      List.map 
---        ( \(x, y) -> 
---            Canvas.path ( x - (bigBase / 2) + (postW / 2), y - 2.2 * postH   )
---              [ lineTo  ( x + (postW / 2)                , y - 4 * postH     )
---              , lineTo  ( x + (bigBase / 2) + (postW / 2), y - 2.2 * postH   )  
---              ]
---        ) m.treesPos
---          |> shapes [ fill (Color.rgb255 71 167 106), stroke (Color.rgb255 66 94 23) ]
---  in
---    group [] 
---      [ posts
---      , bigTriangle
---      , smallTriangle 
---      ]   
+    smallTriangle =
+      List.map 
+        ( \{ x, y, distance } -> 
+            Canvas.path ( x - (bigBase / 2) + (postW / 2), y - 2.2 * postH   )
+              [ lineTo  ( x + (postW / 2)                , y - 4 * postH     )
+              , lineTo  ( x + (bigBase / 2) + (postW / 2), y - 2.2 * postH   )  
+              ]
+        ) m.trees
+          |> shapes [ fill (Color.rgb255 71 167 106), stroke (Color.rgb255 66 94 23) ]
+  in
+    group [] 
+      [ posts
+      , bigTriangle
+      , smallTriangle 
+      ]   
 
 
 
