@@ -349,37 +349,32 @@ statusBar m =
     rect2Width = (m.eplasedTime / m.totalTime) * rect1Width
 
     -- general color
-    color = Color.rgb255 54 79 107
+    greyColor = Color.rgb255 54 79 107
 
-    number (x, y) clr level =
-      let
-        pos = (x, y + 0.35 * r)
-        lvl = String.fromInt level
-      in
-        Canvas.text
-          [ font { size = round r, family = "Arial" }
-          , align Center, fill clr, stroke clr
-          ]
-          pos
-          lvl       
+    canvasText color (x, y) someText =
+      String.fromInt someText
+        |> Canvas.text
+            [ font { size = round r, family = "Arial" }
+            , align Center, fill color, stroke color
+            ]
+            (x, y + 0.35 * r)    
   in
-    group [ stroke color ]
+    group [ stroke greyColor ]
       [ shapes 
-          [ fill Color.white
-          ]
+          [ fill Color.white ]
           [ Canvas.rect (x3, y3) rect1Width rectHeight ]
       , shapes 
-          [ fill color ]
+          [ fill greyColor ]
           [ Canvas.rect (x3, y3) rect2Width rectHeight ]
       , shapes 
-          [ fill color ] 
+          [ fill greyColor ] 
           [ Canvas.circle (x1, y1) r ]
       , shapes
           [ fill white ]
           [ Canvas.circle (x2, y2) r ]
 
-      , number (x1, y1) white m.level
-      , number (x2, y2) color (m.level + 1)
+      , canvasText white (x1, y1) m.level
+      , canvasText greyColor (x2, y2) (m.level + 1)
       ]
 
 

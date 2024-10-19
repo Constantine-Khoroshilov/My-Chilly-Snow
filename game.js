@@ -5876,17 +5876,15 @@ var $joakin$elm_canvas$Canvas$text = F3(
 				}));
 	});
 var $author$project$Main$statusBar = function (m) {
-	var color = A3($avh4$elm_color$Color$rgb255, 54, 79, 107);
+	var greyColor = A3($avh4$elm_color$Color$rgb255, 54, 79, 107);
 	var _v0 = A3($elm$core$Tuple$mapBoth, $elm$core$Basics$toFloat, $elm$core$Basics$toFloat, m.canvSize);
 	var w = _v0.a;
 	var h = _v0.b;
 	var r = 0.020 * h;
-	var number = F3(
-		function (_v4, clr, level) {
+	var canvasText = F3(
+		function (color, _v4, someText) {
 			var x = _v4.a;
 			var y = _v4.b;
-			var pos = _Utils_Tuple2(x, y + (0.35 * r));
-			var lvl = $elm$core$String$fromInt(level);
 			return A3(
 				$joakin$elm_canvas$Canvas$text,
 				_List_fromArray(
@@ -5897,11 +5895,11 @@ var $author$project$Main$statusBar = function (m) {
 							size: $elm$core$Basics$round(r)
 						}),
 						$joakin$elm_canvas$Canvas$Settings$Text$align($joakin$elm_canvas$Canvas$Settings$Text$Center),
-						$joakin$elm_canvas$Canvas$Settings$fill(clr),
-						$joakin$elm_canvas$Canvas$Settings$stroke(clr)
+						$joakin$elm_canvas$Canvas$Settings$fill(color),
+						$joakin$elm_canvas$Canvas$Settings$stroke(color)
 					]),
-				pos,
-				lvl);
+				_Utils_Tuple2(x, y + (0.35 * r)),
+				$elm$core$String$fromInt(someText));
 		});
 	var rectHeight = $elm$core$Basics$sqrt((r * r) + (r * r));
 	var _v1 = _Utils_Tuple2(0.3 * w, 0.1 * h);
@@ -5919,7 +5917,7 @@ var $author$project$Main$statusBar = function (m) {
 		$joakin$elm_canvas$Canvas$group,
 		_List_fromArray(
 			[
-				$joakin$elm_canvas$Canvas$Settings$stroke(color)
+				$joakin$elm_canvas$Canvas$Settings$stroke(greyColor)
 			]),
 		_List_fromArray(
 			[
@@ -5941,7 +5939,7 @@ var $author$project$Main$statusBar = function (m) {
 				$joakin$elm_canvas$Canvas$shapes,
 				_List_fromArray(
 					[
-						$joakin$elm_canvas$Canvas$Settings$fill(color)
+						$joakin$elm_canvas$Canvas$Settings$fill(greyColor)
 					]),
 				_List_fromArray(
 					[
@@ -5955,7 +5953,7 @@ var $author$project$Main$statusBar = function (m) {
 				$joakin$elm_canvas$Canvas$shapes,
 				_List_fromArray(
 					[
-						$joakin$elm_canvas$Canvas$Settings$fill(color)
+						$joakin$elm_canvas$Canvas$Settings$fill(greyColor)
 					]),
 				_List_fromArray(
 					[
@@ -5978,14 +5976,14 @@ var $author$project$Main$statusBar = function (m) {
 						r)
 					])),
 				A3(
-				number,
-				_Utils_Tuple2(x1, y1),
+				canvasText,
 				$avh4$elm_color$Color$white,
+				_Utils_Tuple2(x1, y1),
 				m.level),
 				A3(
-				number,
+				canvasText,
+				greyColor,
 				_Utils_Tuple2(x2, y2),
-				color,
 				m.level + 1)
 			]));
 };
