@@ -13,7 +13,7 @@ import Random
 import Canvas exposing (Point, shapes, group, lineTo)
 import Canvas.Settings exposing (fill, stroke) 
 import Canvas.Settings.Text exposing (TextAlign(..), font, align)
-import Color
+import Color exposing (black, white)
 
 
 
@@ -25,10 +25,11 @@ type alias Model =
   { canvSize : (Int, Int)
   , clickState : ClickState
   , gameState : GameState
-  , time : Float 
-  , eplasedTime : Float
+  , totalTime : Float -- ms
+  , eplasedTime : Float -- ms
   , level : Int
   , ball : Ball
+  , finishLine : Point -- pos
   }
 
 
@@ -98,13 +99,6 @@ getBall canvSize =
     }
 
 
--- max or min by module
-
-minSlipVel = -2
-maxSlipVel = -8
-slipAcceleration = -0.005
-
-
 
 
 -- The func init gets screen width and height from JS 
@@ -118,10 +112,16 @@ init (sw, sh) =
       { canvSize = canvSize
       , clickState = NotHold
       , gameState = Stop
-      , time = 30000 -- ms
+
+      -- totalTime is the duraction of a level,
+      -- the duraction of the first level is equal 15 seconds
+      -- because for each new level its duraction is increased by 10 seconds.
+
+      , totalTime = 5000 -- ms
       , eplasedTime = 0
       , level = 0
       , ball = getBall canvSize
+      , finishLine = (0, toFloat sh)
       }
 
 
@@ -151,6 +151,7 @@ update msg m =
         ( { m
             | ball = updateBallPos m.ball (1000 / delta)
             , eplasedTime = m.eplasedTime + delta
+            , finishLine = updatePos m.ball.y m.time m.eplasedTime
           }
         , Cmd.none
         )
@@ -182,7 +183,7 @@ update msg m =
 
 
 isLevelPassed m =
-  m.time == m.eplasedTime
+  m.totalTime <= m.eplasedTime
 
 
 isCollision m =
@@ -197,13 +198,15 @@ isCollision m =
 
 loadNextLevel : Model -> (Model, Cmd Msg)
 loadNextLevel m =
-  ( { m 
+  let t = m.totalTime + 10000 in
+    ( { m 
         | gameState = Stop
         , clickState = NotHold
-        , level = m.level + 1
-        , time = m.time + 30000
+        , level = m.level + 1 
+        , totalTime = time
         , eplasedTime = 0
         , ball = getBall m.canvSize
+        , finishLine = getPos m.ball.y t 0
       }
     , Cmd.none
     )
@@ -215,9 +218,27 @@ restartLevel m =
       | gameState = Stop
       , eplasedTime = 0
       , ball = getBall m.canvSize
+      , finishLine = getPos m.ball.y m.totalTime 0
     }
   , Cmd.none
   )
+
+
+-- The following function is necessary to calculate 
+-- the positions of game objects at a certain time moment,
+-- endPoint is the point at which the movement will be stopped.
+
+getPos endPoint totalTime eplasedTime =
+  let
+    speed = 8
+    acceleration = 8
+    et = 0.001 * eplasedTime
+    tt = 0.001 * totalTime
+
+    distance =
+      endPoint + tt * (speed + tt * 0.5 * acceleration)
+  in
+    (0, distance - et * (speed + 0.5 * et * acceleration))
 
 
 
@@ -229,7 +250,6 @@ subscriptions : Model -> Sub Msg
 subscriptions m =
   case m.gameState of
     Play ->
-      --onAnimationFrame (\posix -> Frame (Time.posixToMillis posix))
       onAnimationFrameDelta Frame
 
     Stop -> 
@@ -248,7 +268,7 @@ view m =
       then
         Canvas.toHtml m.canvSize mouseEvents
           [ clear m.canvSize
-          --, finishLine m
+          , finishLine m
           , paintBall m.ball
           --, trees m
           --, statusBar m
@@ -355,39 +375,39 @@ paintBall ball =
 --      ]
 
 
---finishLine : Model -> Canvas.Renderable
---finishLine m =
---  let
---    width = first m.canvSize |> toFloat
---    ballY = second m.ball.pos
---    -- square count
---    count = 40
---    -- square width (height)
---    w = width / count
+finishLine : Model -> Canvas.Renderable
+finishLine m =
+  let
+    cw = toFloat (Tuple.first m.canvSize)
 
---    posY1 = (m.levelSize - m.levelPassed |> toFloat) + ballY
---    posY2 = posY1 + w
+    countSquares = 80
+    squareSize = cw / countSquares * 2
+    
+    getColor n c1 c2 = 
+      if modBy 2 n == 0 then c1 else c2
 
---    isEven n =
---      (modBy 2 n) == 0
+    square (x, y) color =
+      shapes
+        [ fill color ]
+        [ Canvas.rect (x, y) squareSize squareSize ]
 
---    cell (x, y) color =
---      shapes
---        [ fill color ]
---        [ Canvas.rect (x, y) w w ]
-
---    cellsColors flag = 
---      List.range 0 (count - 1)
---        |> List.map 
---            (\n -> if xor flag (isEven n) then Color.black else Color.white)
-
---    cellLine posY flag =
---      List.range 0 (count - 1)
---        |> List.map (\n -> ((toFloat n) * w, posY))
---        |> List.map2 (\color coords -> cell coords color) (cellsColors flag)
---  in
---    List.append (cellLine posY1 True) (cellLine posY2 False)
---      |> group []
+    squares (x, y) n =
+      if n > 1 then
+        let
+          curSquaresPair =  
+            [ square (x, y) (getColor n black white)
+            , square (x, y + squareSize) (getColor n white black) 
+            ]
+          nextSquaresPair = squares (x + squareSize, y) (n - 1)
+        in
+          curSquaresPair ++ nextSquaresPair
+      else 
+        []
+      
+    line coords =
+      squares coords countSquares |> group []
+  in
+    line m.finishLine
 
 
 --trees : Model -> Canvas.Renderable
