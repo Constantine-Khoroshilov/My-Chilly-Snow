@@ -67,6 +67,11 @@ type GameState
 -- MOVABLE
 
 
+{- The movable is an object that moves only along the y axis,
+   its y coordinate is calculated using the formula of motion 
+   with constant acceleration. 
+-}
+
 type alias Movable =
   { x : Float
   , y : Float
@@ -78,13 +83,13 @@ type alias Movable =
   }
 
 
-setMovableDist offset time movable =
-  let d = getDistance offset time in
+setDistance offset time movable =
+  let d = calcDistance offset time in
     { movable | distance = d, y = d }
 
 
-updateMovableY time movable =
-  { movable | y = getPos movable.distance time }
+updateMovable time movable =
+  { movable | y = calcPos movable.distance time }
 
 
 -- The speed and the acceleration of the movable objects
@@ -93,20 +98,20 @@ ms = 8
 ma = 8
 
 
+calcDistance offset time =
+  let t = 0.001 * time in
+    offset + t * (ms + 0.5 * t * ma)
+
+
 {- The following function is necessary to calculate 
    the y coordinate of the movable objects at a certain time moment.
 
    The distance is the initial value of the y coordinate.
 -}
 
-getPos distance timeMoment =
+calcPos distance timeMoment =
   let t = 0.001 * timeMoment in
     distance - t * (ms + 0.5 * t * ma)
-
-
-getDistance offset time =
-  let t = 0.001 * time in
-    offset + t * (ms + 0.5 * t * ma)
 
 
 
@@ -206,15 +211,16 @@ update msg m =
       else if isCollision m then
         restartLevel m
 
-      else
-        ( { m
-            | ball = updateBallPos m.ball (1000 / delta)
-            , eplasedTime = m.eplasedTime + delta
-            , finishLine = updateMovableY (m.eplasedTime + delta) m.finishLine
-            , trees = List.map (updateMovableY (m.eplasedTime + delta)) m.trees
-          }
-        , Cmd.none
-        )
+      else 
+        let t = m.eplasedTime + delta in
+          ( { m
+              | ball = updateBallPos m.ball (1000 / delta)
+              , eplasedTime = t
+              , finishLine = updateMovable t m.finishLine
+              , trees = List.map (updateMovable t) m.trees
+            }
+          , Cmd.none
+          )
 
 
     GotTrees trees ->
@@ -266,7 +272,7 @@ loadNextLevel m =
         , totalTime = t
         , eplasedTime = 0
         , ball = getBall m.canvSize
-        , finishLine = setMovableDist m.ball.y t m.finishLine
+        , finishLine = setDistance m.ball.y t m.finishLine
       }
     , Random.generate GotTrees
         <| treesGenerator t m.ball.y 
@@ -280,7 +286,7 @@ restartLevel m =
       | gameState = Stop
       , eplasedTime = 0
       , ball = getBall m.canvSize
-      , finishLine = setMovableDist m.ball.y m.totalTime m.finishLine
+      , finishLine = setDistance m.ball.y m.totalTime m.finishLine
     }
   , Cmd.none
   )
@@ -293,9 +299,9 @@ treesGenerator totalTime ballY canvWidth =
     paddingX = 50
 
     minDistance = ballY + paddingY
-    maxDistance = getDistance ballY totalTime - paddingY 
+    maxDistance = calcDistance ballY totalTime - paddingY 
 
-    count = round (0.05 * maxDistance)
+    count = round (0.01 * maxDistance)
   in
     Random.float paddingX (canvWidth - paddingX)
       |> Random.map2 (\y x -> Movable x y y) (Random.float minDistance maxDistance)
@@ -375,7 +381,7 @@ clear canvSize =
     w = toFloat (Tuple.first canvSize)
     h = toFloat (Tuple.second canvSize)
   in
-    Canvas.clear (0, 0) w h
+    Canvas.clear (0, 0) w h   
 
 
 paintBall ball =
@@ -409,33 +415,36 @@ statusBar m =
     -- the width of the 2nd rectangle
     rect2Width = (m.eplasedTime / m.totalTime) * rect1Width
 
-    -- general color
-    greyColor = Color.rgb255 54 79 107
+    grey = Color.rgb255 54 79 107
 
-    canvasText color (x, y) someText =
-      String.fromInt someText
-        |> Canvas.text
-            [ font { size = round r, family = "Arial" }
-            , align Center, fill color, stroke color
-            ]
-            (x, y + 0.35 * r)    
+    displayLevel (x, y) color lvl =
+      let
+        l = String.fromInt lvl
+        settings =
+          [ font { size = round r, family = "Arial" }
+          , align Center
+          , stroke color
+          , fill color
+          ]
+      in
+        Canvas.text settings (x, y + 0.35 * r) l
   in
-    group [ stroke greyColor ]
+    group [ stroke grey ]
       [ shapes 
           [ fill Color.white ]
           [ Canvas.rect (x3, y3) rect1Width rectHeight ]
       , shapes 
-          [ fill greyColor ]
+          [ fill grey ]
           [ Canvas.rect (x3, y3) rect2Width rectHeight ]
       , shapes 
-          [ fill greyColor ] 
+          [ fill grey ] 
           [ Canvas.circle (x1, y1) r ]
       , shapes
           [ fill white ]
           [ Canvas.circle (x2, y2) r ]
 
-      , canvasText white (x1, y1) m.level
-      , canvasText greyColor (x2, y2) (m.level + 1)
+      , displayLevel (x1, y1) white m.level
+      , displayLevel (x2, y2) grey (m.level + 1)
       ]
 
 
