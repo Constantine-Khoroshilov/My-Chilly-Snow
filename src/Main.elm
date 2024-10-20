@@ -212,19 +212,50 @@ update msg m =
         restartLevel m
 
       else 
-        let t = m.eplasedTime + delta in
+        let 
+          t = m.eplasedTime + delta
+
+          renderQueues = 
+            Tuple.second m.canvSize
+              |> updateRenderTQ m.renderTQueue m.noRenderTQueue t 
+
+          -- Removing the movable objects that have left the canvas 
+
+          renderTQ =
+            Tuple.first renderQueues
+              |> List.filter (\movable -> movable.y > 0)
+
+          noRenderTQ =
+            Tuple.second renderQueues
+        in
           ( { m
-              | ball = updateBallPos m.ball (1000 / delta)
-              , eplasedTime = t
+              | eplasedTime = t
+              , ball = updateBallPos m.ball (1000 / delta)
               , finishLine = updateMovable t m.finishLine
-              , trees = List.map (updateMovable t) m.trees
+              , renderTQueue = List.map (updateMovable t) renderTQ
+              , noRenderTQueue = noRenderTQ
             }
           , Cmd.none
           )
 
 
     GotTrees trees ->
-      ( { m | trees = trees }
+      let
+        sortedTrees = 
+          List.sortBy (\tree -> tree.distance) trees
+
+        -- Splitting the sorted list of trees into 
+        -- a rendering queue and no rendering queue.
+
+        (renderTQ, noRenderTQ) =
+          Tuple.second m.canvSize
+            |> updateRenderTQ [] sortedTrees m.totalTime
+      in
+      ( { m 
+          | trees = sortedTrees
+          , renderTQueue = renderTQ
+          , noRenderTQueue = noRenderTQ
+          }
       , Cmd.none
       )
 
@@ -282,11 +313,18 @@ loadNextLevel m =
 
 restartLevel :  Model -> (Model, Cmd Msg)
 restartLevel m =
+  let
+    (renderTQ, noRenderTQ) =
+      Tuple.second m.canvSize
+        |> updateRenderTQ [] m.trees m.totalTime
+  in
   ( { m 
       | gameState = Stop
       , eplasedTime = 0
       , ball = getBall m.canvSize
       , finishLine = setDistance m.ball.y m.totalTime m.finishLine
+      , renderTQueue = renderTQ
+      , noRenderTQueue = noRenderTQ
     }
   , Cmd.none
   )
@@ -308,6 +346,26 @@ treesGenerator totalTime ballY canvWidth =
       |> Random.list count
 
 
+{- The following function moves the movable objects 
+   from the noRenderTQueue to the renderTQueue 
+   if it is time to process and display them.
+-}
+
+updateRenderTQ renderTQ noRenderTQ timeMoment canvHeight =
+  case noRenderTQ of
+    head :: tail ->
+      let
+        height = toFloat canvHeight
+        position = calcPos head.distance timeMoment
+      in
+        if position < height then
+          updateRenderTQ (head :: renderTQ) tail timeMoment canvHeight
+
+        else
+          (renderTQ, noRenderTQ) 
+
+    [] ->
+      (renderTQ, noRenderTQ)
 
 
 -- SUBSCRIPTIONS
@@ -493,7 +551,7 @@ paintTrees m =
     postW = 0.01 * width
 
     posts =
-      List.map (\{ x, y, distance } -> Canvas.rect (x, y - postH) postW postH) m.trees
+      List.map (\{ x, y, distance } -> Canvas.rect (x, y - postH) postW postH) m.renderTQueue 
         |> shapes [ fill (Color.rgb255 117 90 87) ]
 
     bigBase = 0.05 * width
@@ -505,7 +563,7 @@ paintTrees m =
               [ lineTo  ( x  + (postW / 2)                 , y - 3.3 * postH )
               , lineTo  ( x + (bigBase / 1.7) + (postW / 2), y - postH       )  
               ]
-        ) m.trees
+        ) m.renderTQueue 
           |> shapes [ fill (Color.rgb255 71 167 106), stroke (Color.rgb255 66 94 23) ]
 
     smallTriangle =
@@ -515,7 +573,7 @@ paintTrees m =
               [ lineTo  ( x + (postW / 2)                , y - 4 * postH     )
               , lineTo  ( x + (bigBase / 2) + (postW / 2), y - 2.2 * postH   )  
               ]
-        ) m.trees
+        ) m.renderTQueue 
           |> shapes [ fill (Color.rgb255 71 167 106), stroke (Color.rgb255 66 94 23) ]
   in
     group [] 

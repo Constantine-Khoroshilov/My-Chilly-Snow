@@ -5670,6 +5670,17 @@ var $author$project$Main$subscriptions = function (m) {
 };
 var $author$project$Main$Hold = {$: 'Hold'};
 var $author$project$Main$Play = {$: 'Play'};
+var $elm$core$List$filter = F2(
+	function (isGood, list) {
+		return A3(
+			$elm$core$List$foldr,
+			F2(
+				function (x, xs) {
+					return isGood(x) ? A2($elm$core$List$cons, x, xs) : xs;
+				}),
+			_List_Nil,
+			list);
+	});
 var $elm$core$Basics$ge = _Utils_ge;
 var $author$project$Main$isCollision = function (m) {
 	var cw = m.canvSize.a;
@@ -5683,7 +5694,42 @@ var $author$project$Main$isLevelPassed = function (m) {
 };
 var $elm$core$Platform$Cmd$batch = _Platform_batch;
 var $elm$core$Platform$Cmd$none = $elm$core$Platform$Cmd$batch(_List_Nil);
+var $author$project$Main$calcPos = F2(
+	function (distance, timeMoment) {
+		var t = 0.001 * timeMoment;
+		return distance - (t * ($author$project$Main$ms + ((0.5 * t) * $author$project$Main$ma)));
+	});
+var $author$project$Main$updateRenderTQ = F4(
+	function (renderTQ, noRenderTQ, timeMoment, canvHeight) {
+		updateRenderTQ:
+		while (true) {
+			if (noRenderTQ.b) {
+				var head = noRenderTQ.a;
+				var tail = noRenderTQ.b;
+				var position = A2($author$project$Main$calcPos, head.distance, timeMoment);
+				var height = canvHeight;
+				if (_Utils_cmp(position, height) < 0) {
+					var $temp$renderTQ = A2($elm$core$List$cons, head, renderTQ),
+						$temp$noRenderTQ = tail,
+						$temp$timeMoment = timeMoment,
+						$temp$canvHeight = canvHeight;
+					renderTQ = $temp$renderTQ;
+					noRenderTQ = $temp$noRenderTQ;
+					timeMoment = $temp$timeMoment;
+					canvHeight = $temp$canvHeight;
+					continue updateRenderTQ;
+				} else {
+					return _Utils_Tuple2(renderTQ, noRenderTQ);
+				}
+			} else {
+				return _Utils_Tuple2(renderTQ, noRenderTQ);
+			}
+		}
+	});
 var $author$project$Main$restartLevel = function (m) {
+	var _v0 = A4($author$project$Main$updateRenderTQ, _List_Nil, m.trees, m.totalTime, m.canvSize.b);
+	var renderTQ = _v0.a;
+	var noRenderTQ = _v0.b;
 	return _Utils_Tuple2(
 		_Utils_update(
 			m,
@@ -5691,10 +5737,13 @@ var $author$project$Main$restartLevel = function (m) {
 				ball: $author$project$Main$getBall(m.canvSize),
 				eplasedTime: 0,
 				finishLine: A3($author$project$Main$setDistance, m.ball.y, m.totalTime, m.finishLine),
-				gameState: $author$project$Main$Stop
+				gameState: $author$project$Main$Stop,
+				noRenderTQueue: noRenderTQ,
+				renderTQueue: renderTQ
 			}),
 		$elm$core$Platform$Cmd$none);
 };
+var $elm$core$List$sortBy = _List_sortBy;
 var $author$project$Main$updateBall = F3(
 	function (ball, isBoost, isUpdateDir) {
 		return _Utils_update(
@@ -5716,11 +5765,6 @@ var $author$project$Main$updateBallPos = F2(
 				x: ball.x + ((direction * decreaser) * (speed + (ball.isBoost ? acceleration : 0)))
 			});
 	});
-var $author$project$Main$calcPos = F2(
-	function (distance, timeMoment) {
-		var t = 0.001 * timeMoment;
-		return distance - (t * ($author$project$Main$ms + ((0.5 * t) * $author$project$Main$ma)));
-	});
 var $author$project$Main$updateMovable = F2(
 	function (time, movable) {
 		return _Utils_update(
@@ -5741,6 +5785,14 @@ var $author$project$Main$update = F2(
 						return $author$project$Main$restartLevel(m);
 					} else {
 						var t = m.eplasedTime + delta;
+						var renderQueues = A4($author$project$Main$updateRenderTQ, m.renderTQueue, m.noRenderTQueue, t, m.canvSize.b);
+						var renderTQ = A2(
+							$elm$core$List$filter,
+							function (movable) {
+								return movable.y > 0;
+							},
+							renderQueues.a);
+						var noRenderTQ = renderQueues.b;
 						return _Utils_Tuple2(
 							_Utils_update(
 								m,
@@ -5748,20 +5800,30 @@ var $author$project$Main$update = F2(
 									ball: A2($author$project$Main$updateBallPos, m.ball, 1000 / delta),
 									eplasedTime: t,
 									finishLine: A2($author$project$Main$updateMovable, t, m.finishLine),
-									trees: A2(
+									noRenderTQueue: noRenderTQ,
+									renderTQueue: A2(
 										$elm$core$List$map,
 										$author$project$Main$updateMovable(t),
-										m.trees)
+										renderTQ)
 								}),
 							$elm$core$Platform$Cmd$none);
 					}
 				}
 			case 'GotTrees':
 				var trees = msg.a;
+				var sortedTrees = A2(
+					$elm$core$List$sortBy,
+					function (tree) {
+						return tree.distance;
+					},
+					trees);
+				var _v1 = A4($author$project$Main$updateRenderTQ, _List_Nil, sortedTrees, m.totalTime, m.canvSize.b);
+				var renderTQ = _v1.a;
+				var noRenderTQ = _v1.b;
 				return _Utils_Tuple2(
 					_Utils_update(
 						m,
-						{trees: trees}),
+						{noRenderTQueue: noRenderTQ, renderTQueue: renderTQ, trees: sortedTrees}),
 					$elm$core$Platform$Cmd$none);
 			case 'ClickDown':
 				return _Utils_Tuple2(
@@ -6151,7 +6213,7 @@ var $author$project$Main$paintTrees = function (m) {
 					postW,
 					postH);
 			},
-			m.trees));
+			m.renderTQueue));
 	var bigBase = 0.05 * width;
 	var bigTriangle = A2(
 		$joakin$elm_canvas$Canvas$shapes,
@@ -6179,7 +6241,7 @@ var $author$project$Main$paintTrees = function (m) {
 							_Utils_Tuple2((x + (bigBase / 1.7)) + (postW / 2), y - postH))
 						]));
 			},
-			m.trees));
+			m.renderTQueue));
 	var smallTriangle = A2(
 		$joakin$elm_canvas$Canvas$shapes,
 		_List_fromArray(
@@ -6206,7 +6268,7 @@ var $author$project$Main$paintTrees = function (m) {
 							_Utils_Tuple2((x + (bigBase / 2)) + (postW / 2), y - (2.2 * postH)))
 						]));
 			},
-			m.trees));
+			m.renderTQueue));
 	return A2(
 		$joakin$elm_canvas$Canvas$group,
 		_List_Nil,
