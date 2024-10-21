@@ -168,7 +168,8 @@ getBall canvSize =
 
 setDecreaser ball delta =
   let fps = 1000 / delta in 
-    { ball | decreaser = 60 / fps }
+    -- The decreaser cannot be more than 1 and less than 0.5
+    { ball | decreaser = clamp 0.5 1 (60 / fps) }
 
 
 isDecreaserUnset ball =
@@ -256,7 +257,7 @@ update msg m =
 
 
     GotFrameDelta delta ->
-      ( { m | ball = setDecreaser m.ball delta }, Cmd.none )
+      ( { m | ball = (setDecreaser m.ball delta) }, Cmd.none )
 
 
     GotTrees trees ->
@@ -359,7 +360,7 @@ treesGenerator totalTime ballY canvWidth =
     minDistance = ballY + paddingY
     maxDistance = calcDistance ballY totalTime - paddingY 
 
-    count = round (0.01 * maxDistance)
+    count = round (0.02 * maxDistance)
   in
     Random.float paddingX (canvWidth - paddingX)
       |> Random.map2 (\y x -> Movable x y y) (Random.float minDistance maxDistance)
