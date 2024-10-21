@@ -144,7 +144,7 @@ updateBallPos ball delta =
       -- 90 fps
       else if 9.7 < delta then 0.6
       -- 120 fps
-      else 0.5
+      else 0.3
   in
     { ball | x = ball.x + decreaser * direction * (speed + 
         if ball.isBoost then acceleration else 0)

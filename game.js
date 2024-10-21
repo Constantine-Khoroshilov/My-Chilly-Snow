@@ -5757,7 +5757,7 @@ var $author$project$Main$updateBallPos = F2(
 	function (ball, delta) {
 		var speed = 3.0;
 		var direction = ball.direction;
-		var decreaser = (11.1 < delta) ? 1 : ((9.7 < delta) ? 0.6 : 0.5);
+		var decreaser = (11.1 < delta) ? 1 : ((9.7 < delta) ? 0.6 : 0.3);
 		var acceleration = 1.5;
 		return _Utils_update(
 			ball,
