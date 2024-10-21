@@ -94,8 +94,8 @@ updateMovable time movable =
 
 -- The speed and the acceleration of the movable objects
 
-ms = 8
-ma = 8
+ms = 25
+ma = 5
 
 
 calcDistance offset time =
@@ -125,17 +125,22 @@ type alias Ball =
   , direction : Int
   , isBoost : Bool
   , radius : Float
+
+  -- The decreaser is a value that is necessary to ensure 
+  -- that the movement of the ball is constant on devices 
+  -- with different frame rates per second.
+
+  , decreaser : Float
   }
 
 
 updateBallPos ball fps =
   let
     direction = toFloat ball.direction
-    decreaser = 60 / fps
-    acceleration = 2
-    speed = 4.5
+    acceleration = 1.5
+    speed = 3.0
   in
-    { ball | x = ball.x + direction * decreaser * (speed + 
+    { ball | x = ball.x + ball.decreaser * direction * (speed + 
         if ball.isBoost then acceleration else 0)
     }
 
@@ -157,7 +162,17 @@ getBall canvSize =
     , direction = 1
     , isBoost = False
     , radius = 0.015 * w
+    , decreaser = 1
     }
+
+
+setDecreaser ball delta =
+  let fps = 1000 / delta in 
+    { ball | decreaser = 60 / fps }
+
+
+isDecreaserUnset ball =
+  ball.decreaser == 1
 
 
 
@@ -196,6 +211,7 @@ init (sw, sh) =
 
 type Msg
   = Frame Float
+  | GotFrameDelta Float
   | GotTrees (List Movable)
   | ClickDown
   | ClickUp
@@ -237,6 +253,10 @@ update msg m =
             }
           , Cmd.none
           )
+
+
+    GotFrameDelta delta ->
+      ( { m | ball = setDecreaser m.ball delta }, Cmd.none )
 
 
     GotTrees trees ->
@@ -368,6 +388,8 @@ updateRenderTQ renderTQ noRenderTQ timeMoment canvHeight =
       (renderTQ, noRenderTQ)
 
 
+
+
 -- SUBSCRIPTIONS
 
 
@@ -378,7 +400,10 @@ subscriptions m =
       onAnimationFrameDelta Frame
 
     Stop -> 
-      Sub.none
+      if isDecreaserUnset m.ball then
+        onAnimationFrameDelta GotFrameDelta 
+      else
+        Sub.none
   
 
 
