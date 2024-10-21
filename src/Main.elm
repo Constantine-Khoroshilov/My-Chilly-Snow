@@ -125,22 +125,28 @@ type alias Ball =
   , direction : Int
   , isBoost : Bool
   , radius : Float
-
-  -- The decreaser is a value that is necessary to ensure 
-  -- that the movement of the ball is constant on devices 
-  -- with different frame rates per second.
-
-  , decreaser : Float
   }
 
 
-updateBallPos ball fps =
+updateBallPos ball delta =
   let
     direction = toFloat ball.direction
     acceleration = 1.5
     speed = 3.0
+
+    -- The decreaser is a value that is necessary to ensure 
+    -- that the movement of the ball is constant on devices 
+    -- with 60, 90 or 120 fps.
+
+    decreaser = 
+      -- 60 fps
+      if 11.1 < delta then 1
+      -- 90 fps
+      else if 9.7 < delta then 0.6
+      -- 120 fps
+      else 0.5
   in
-    { ball | x = ball.x + ball.decreaser * direction * (speed + 
+    { ball | x = ball.x + decreaser * direction * (speed + 
         if ball.isBoost then acceleration else 0)
     }
 
@@ -162,17 +168,7 @@ getBall canvSize =
     , direction = 1
     , isBoost = False
     , radius = 0.015 * w
-    , decreaser = 1
     }
-
-
-setDecreaser ball delta =
-  let fps = 1000 / delta in 
-    { ball | decreaser = 60 / fps }
-
-
-isDecreaserUnset ball =
-  ball.decreaser == 1
 
 
 
@@ -256,7 +252,7 @@ update msg m =
 
 
     GotFrameDelta delta ->
-      ( { m | ball = setDecreaser m.ball delta }, Cmd.none )
+      ( m, Cmd.none )
 
 
     GotTrees trees ->
@@ -400,10 +396,7 @@ subscriptions m =
       onAnimationFrameDelta Frame
 
     Stop -> 
-      if isDecreaserUnset m.ball then
-        onAnimationFrameDelta GotFrameDelta 
-      else
-        Sub.none
+      Sub.none
   
 
 

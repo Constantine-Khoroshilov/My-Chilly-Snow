@@ -5257,7 +5257,7 @@ var $elm$core$Tuple$second = function (_v0) {
 var $author$project$Main$getBall = function (canvSize) {
 	var w = canvSize.a;
 	var h = canvSize.b;
-	return {decreaser: 1, direction: 1, isBoost: false, radius: 0.015 * w, x: 0.5 * w, y: 0.3 * h};
+	return {direction: 1, isBoost: false, radius: 0.015 * w, x: 0.5 * w, y: 0.3 * h};
 };
 var $author$project$Main$GotTrees = function (a) {
 	return {$: 'GotTrees', a: a};
@@ -5528,12 +5528,6 @@ var $elm$json$Json$Decode$int = _Json_decodeInt;
 var $author$project$Main$Frame = function (a) {
 	return {$: 'Frame', a: a};
 };
-var $author$project$Main$GotFrameDelta = function (a) {
-	return {$: 'GotFrameDelta', a: a};
-};
-var $author$project$Main$isDecreaserUnset = function (ball) {
-	return ball.decreaser === 1;
-};
 var $elm$core$Platform$Sub$batch = _Platform_batch;
 var $elm$core$Platform$Sub$none = $elm$core$Platform$Sub$batch(_List_Nil);
 var $elm$browser$Browser$AnimationManager$Delta = function (a) {
@@ -5671,7 +5665,7 @@ var $author$project$Main$subscriptions = function (m) {
 	if (_v0.$ === 'Play') {
 		return $elm$browser$Browser$Events$onAnimationFrameDelta($author$project$Main$Frame);
 	} else {
-		return $author$project$Main$isDecreaserUnset(m.ball) ? $elm$browser$Browser$Events$onAnimationFrameDelta($author$project$Main$GotFrameDelta) : $elm$core$Platform$Sub$none;
+		return $elm$core$Platform$Sub$none;
 	}
 };
 var $author$project$Main$Hold = {$: 'Hold'};
@@ -5749,13 +5743,6 @@ var $author$project$Main$restartLevel = function (m) {
 			}),
 		$elm$core$Platform$Cmd$none);
 };
-var $author$project$Main$setDecreaser = F2(
-	function (ball, delta) {
-		var fps = 1000 / delta;
-		return _Utils_update(
-			ball,
-			{decreaser: 60 / fps});
-	});
 var $elm$core$List$sortBy = _List_sortBy;
 var $author$project$Main$updateBall = F3(
 	function (ball, isBoost, isUpdateDir) {
@@ -5767,14 +5754,15 @@ var $author$project$Main$updateBall = F3(
 			});
 	});
 var $author$project$Main$updateBallPos = F2(
-	function (ball, fps) {
+	function (ball, delta) {
 		var speed = 3.0;
 		var direction = ball.direction;
+		var decreaser = (11.1 < delta) ? 1 : ((9.7 < delta) ? 0.6 : 0.5);
 		var acceleration = 1.5;
 		return _Utils_update(
 			ball,
 			{
-				x: ball.x + ((ball.decreaser * direction) * (speed + (ball.isBoost ? acceleration : 0)))
+				x: ball.x + ((decreaser * direction) * (speed + (ball.isBoost ? acceleration : 0)))
 			});
 	});
 var $author$project$Main$updateMovable = F2(
@@ -5823,13 +5811,7 @@ var $author$project$Main$update = F2(
 				}
 			case 'GotFrameDelta':
 				var delta = msg.a;
-				return _Utils_Tuple2(
-					_Utils_update(
-						m,
-						{
-							ball: A2($author$project$Main$setDecreaser, m.ball, delta)
-						}),
-					$elm$core$Platform$Cmd$none);
+				return _Utils_Tuple2(m, $elm$core$Platform$Cmd$none);
 			case 'GotTrees':
 				var trees = msg.a;
 				var sortedTrees = A2(
