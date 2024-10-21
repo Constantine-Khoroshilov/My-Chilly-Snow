@@ -5753,18 +5753,16 @@ var $author$project$Main$updateBall = F3(
 				isBoost: isBoost
 			});
 	});
-var $author$project$Main$updateBallPos = F2(
-	function (ball, delta) {
-		var speed = 3.0;
-		var direction = ball.direction;
-		var decreaser = (11.1 < delta) ? 1 : ((9.7 < delta) ? 0.6 : 0.3);
-		var acceleration = 1.5;
-		return _Utils_update(
-			ball,
-			{
-				x: ball.x + ((decreaser * direction) * (speed + (ball.isBoost ? acceleration : 0)))
-			});
-	});
+var $author$project$Main$updateBallPos = function (ball) {
+	var speed = 3.0;
+	var direction = ball.direction;
+	var acceleration = 1.5;
+	return _Utils_update(
+		ball,
+		{
+			x: ball.x + (direction * (speed + (ball.isBoost ? acceleration : 0)))
+		});
+};
 var $author$project$Main$updateMovable = F2(
 	function (time, movable) {
 		return _Utils_update(
@@ -5797,7 +5795,7 @@ var $author$project$Main$update = F2(
 							_Utils_update(
 								m,
 								{
-									ball: A2($author$project$Main$updateBallPos, m.ball, 1000 / delta),
+									ball: $author$project$Main$updateBallPos(m.ball),
 									eplasedTime: t,
 									finishLine: A2($author$project$Main$updateMovable, t, m.finishLine),
 									noRenderTQueue: noRenderTQ,

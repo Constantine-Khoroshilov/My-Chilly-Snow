@@ -128,25 +128,13 @@ type alias Ball =
   }
 
 
-updateBallPos ball delta =
+updateBallPos ball =
   let
     direction = toFloat ball.direction
     acceleration = 1.5
     speed = 3.0
-
-    -- The decreaser is a value that is necessary to ensure 
-    -- that the movement of the ball is constant on devices 
-    -- with 60, 90 or 120 fps.
-
-    decreaser = 
-      -- 60 fps
-      if 11.1 < delta then 1
-      -- 90 fps
-      else if 9.7 < delta then 0.6
-      -- 120 fps
-      else 0.3
   in
-    { ball | x = ball.x + decreaser * direction * (speed + 
+    { ball | x = ball.x + direction * (speed + 
         if ball.isBoost then acceleration else 0)
     }
 
@@ -242,7 +230,7 @@ update msg m =
         in
           ( { m
               | eplasedTime = t
-              , ball = updateBallPos m.ball (1000 / delta)
+              , ball = updateBallPos m.ball
               , finishLine = updateMovable t m.finishLine
               , renderTQueue = List.map (updateMovable t) renderTQ
               , noRenderTQueue = noRenderTQ
